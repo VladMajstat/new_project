@@ -1,0 +1,138 @@
+
+{% load static widget_tweaks %}
+
+{% block title %}Edit HR{% endblock title %}
+
+{% block content_area %}
+
+<div class="tab-content" id="adminTabsContent">
+
+    <div class="card rounded-0 mb-4">
+        <div class="card-body">
+
+            {% if messages %}
+                  <div class="container mt-3">
+                    {% for message in messages %}
+                      <div class="alert
+                           {% if message.tags == 'error' %}alert-danger
+                           {% elif message.tags == 'success' %}alert-success
+                           {% elif message.tags == 'warning' %}alert-warning
+                           {% else %}alert-info{% endif %}
+                           alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    {% endfor %}
+                  </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">Edit HR: {{ hr.name }}</h4>
+                <a href="{% url 'hrs_list' %}" class="btn btn-light btn-sm rounded-0 border">
+                    <i class="ph-arrow-left me-2"></i> Back to list
+                </a>
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><b>Phone:</b></label>
+                        {{ profile_form.phone|add_class:"form-control rounded-0"|attr:"placeholder:e.g. 067 777 8888" }}
+                        <div class="text-danger small">{{ profile_form.phone.errors|striptags }}</div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><b>Email:</b></label>
+                        {{ profile_form.email|add_class:"form-control rounded-0" }}
+                        <div class="text-danger small">{{ profile_form.email.errors|striptags }}</div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><b>First Name:</b></label>
+                        {{ profile_form.first_name|add_class:"form-control rounded-0" }}
+                        <div class="text-danger small">{{ profile_form.first_name.errors|striptags }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><b>Last Name:</b></label>
+                        {{ profile_form.last_name|add_class:"form-control rounded-0" }}
+                        <div class="text-danger small">{{ profile_form.last_name.errors|striptags }}</div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label"><b>Profile Photo:</b></label>
+                        {{ profile_form.profile_photo|add_class:"form-control rounded-0" }}
+                        <div class="text-danger small">{{ profile_form.profile_photo.errors|striptags }}</div>
+
+                        {% if hr.profile_photo %}
+                            <div class="mt-2 d-flex align-items-center">
+                                <img src="{{ hr.profile_photo.url }}" alt="Current Photo" class="rounded border me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                <span class="text-muted small">Current photo</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="text-end mt-3">
+                    <button type="submit" name="submit_profile" class="btn btn-pink rounded-0 px-4">
+                        <i class="ph-paper-plane-tilt me-2"></i>  Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if is_owner and password_form %}
+    <div class="card rounded-0">
+        <div class="card-body">
+            <h4 class="mb-4">Change Password</h4>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {% if password_form.non_field_errors %}
+                    <div class="alert alert-danger rounded-0">
+                        {{ password_form.non_field_errors|striptags }}
+                    </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label"><b>Old Password:</b></label>
+                        {{ password_form.old_password|add_class:"form-control rounded-0" }}
+                        <div class="text-danger small">{{ password_form.old_password.errors|striptags }}</div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><b>New Password:</b></label>
+                        {{ password_form.new_password1|add_class:"form-control rounded-0" }}
+                        <div class="text-danger small">{{ password_form.new_password1.errors|striptags }}</div>
+                         <div class="form-text small">{{ password_form.new_password1.help_text|safe }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><b>Confirm New Password:</b></label>
+                        {{ password_form.new_password2|add_class:"form-control rounded-0" }}
+                        <div class="text-danger small">{{ password_form.new_password2.errors|striptags }}</div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" name="submit_password" class="btn btn-warning rounded-0 px-4">
+                        <i class="ph-lock-key me-2"></i> Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock content_area %}

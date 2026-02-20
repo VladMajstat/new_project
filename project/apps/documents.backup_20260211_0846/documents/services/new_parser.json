@@ -1,0 +1,81 @@
+{
+  "block1_insurance": {
+    "krankenkasse": "DAK-GESUNDHEIT",
+    "status": "5000600"
+  },
+  "block2_patient": {
+    "patiant_surname": "Selmann",
+    "patiant_name": "Max",
+    "patiant_street": "Audre-Lorde-Str. 52",
+    "patiant_zip": "10997",
+    "patiant_city": "Berlin",
+    "patiant_country": "D",
+    "geb_am": "28.10.58",
+    "kostentraegerkennung": "105830016",
+    "versichertennr": "B951040264",
+    "status": "5000600"
+  },
+  "block3_doctor_ids": {
+    "betriebsstaetten_nr": "720058800",
+    "arzt_nr": "069724303",
+    "datum": "11.11.25"
+  },
+  "block4_reasons": {
+    "unfall": false,
+    "arbeitsunfall": false,
+    "versorgungsleiden": false
+  },
+  "block5_directions": {
+    "hinfahrt": true,
+    "rueckfahrt": true
+  },
+  "block6_treatment_type": {
+    "voll_teilstationaer": false,
+    "vor_nachstationaer": false,
+    "ambulant_merkmale": false,
+    "anderer_grund": false
+  },
+  "block7_mandatory_trips": {
+    "hochfrequent": false,
+    "ausnahmefall": false,
+    "dauerhafte_mobilitaet": false
+  },
+  "block8_ktw_reason": {
+    "anderer_grund_ktw": true,
+    "reason_description": ""
+  },
+  "block9_schedule": {
+    "vom_am": "11.11.25",
+    "x_pro_woche": "",
+    "bis_voraussichtlich": ""
+  },
+  "block10_clinic": {
+    "clinic_name": "MVZ Gesundes Friedrichshain",
+    "clinic_zip": "",
+    "clinic_street": "",
+    "clinic_city": ""
+  },
+  "block11_transport_type": {
+    "taxi_mietwagen": false,
+    "ktw_medizinisch": true,
+    "vitalzeichenkontrolle": false,
+    "rtw": false,
+    "naw_nef": false,
+    "andere": false
+  },
+  "block12_transport_mode": {
+    "rollstuhl": false,
+    "tragestuhl": true,
+    "liegend": false
+  },
+  "block13_doctor_contact": {
+    "auftraggeberName": "MVZ-Gesundes Friedrichshain GmbH",
+    "auftraggeberInfo": "Standort Ruschstraße 103\n10365 Berlin",
+    "auftraggeberZip": "10365",
+    "auftraggeberCity": "Berlin",
+    "auftraggeberTelefon": "030/863286010"
+  },
+  "block14_notes": {
+    "begruendung_sonstiges": ""
+  }
+}

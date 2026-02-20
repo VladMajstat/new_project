@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .table-responsive-container {
+            overflow-x: auto;
+            margin-bottom: 0;
+            min-height: 400px;
+        }
+
+        .btn-custom {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 13px;
+            border-radius: 4px;
+            color: #fff;
+            text-decoration: none;
+            margin-right: 4px;
+        }
+        .btn-edit { background-color: #007bff; }
+        .btn-delete { background-color: #dc3545; }
+        .btn-custom:hover { opacity: 0.85; }
+
+        .col-avatar-width {
+            width: 90px;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .col-date {
+            width: 170px;
+            min-width: 170px;
+            max-width: 170px;
+        }
+
+        .col-status-width {
+            width: 180px;
+            min-width: 180px;
+            max-width: 180px;
+        }
+
+        .col-phone-width {
+            width: 195px;
+            min-width: 195px;
+            max-width: 195px;
+        }
+
+        .col-resume-width {
+            width: 140px;
+            min-width: 140px;
+            max-width: 140px;
+            text-align: center;
+        }
+
+        .col-comments-width {
+            width: 160px;
+            min-width: 160px;
+            max-width: 160px;
+            text-align: center;
+        }
+
+        .col-action-width {
+            width: 160px;
+            min-width: 160px;
+            text-align: center;
+        }
+
+        .table.tasks-list th,
+        .table.tasks-list td {
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 25px !important;
+            padding-left: 25px !important;
+        }
+
+        .dropdown-menu-status {
+            display: none;
+            position: fixed !important;
+            z-index: 9999 !important;
+            margin-top: 0 !important;
+        }
+        .dropdown-menu-status.show { display: block; }
+
+        th.sortable { cursor: pointer; user-select: none; position: relative; }
+        th.sortable .sort-indicator { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.7em; opacity: 0.7; }
+    </style>
+    <style id="dynamic-cols-style"></style>
+</head>
+<body>
+
+<div class="container-fluid mt-3 d-flex flex-column h-100">
+
+    <div class="datatable-header flex-shrink-0 dt-no-pagination-header d-flex align-items-center justify-content-end mb-3">
+        <h2 class="me-auto">Total count: {{candidates_count}}</h2>
+        <div class="d-flex align-items-center gap-2">
+
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="viewButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    View
+                </button>
+                <ul id="view-dropdown" class="dropdown-menu dropdown-menu-end" aria-labelledby="viewButton" style="max-height: 300px; overflow-y: auto;">
+                    <li><button class="dropdown-item" id="selectAllCols">Select All</button></li>
+                    <li><button class="dropdown-item" id="deselectAllCols">Deselect All</button></li>
+                    <li><hr class="dropdown-divider"></li>
+
+                    <li class="dropdown-item d-flex align-items-center py-2">
+                        <input type="checkbox" id="showAvatar" class="form-check-input me-2 col-toggle" data-target="col-avatar" checked>
+                        <label for="showAvatar" class="form-check-label mb-0 w-100">Profile</label>
+                    </li>
+                    <li class="dropdown-item d-flex align-items-center py-2">
+                        <input type="checkbox" id="showName" class="form-check-input me-2 col-toggle" data-target="col-name" checked>
+                        <label for="showName" class="form-check-label mb-0 w-100">Name</label>
+                    </li>
+                    <li class="dropdown-item d-flex align-items-center py-2">
+                        <input type="checkbox" id="showEmail" class="form-check-input me-2 col-toggle" data-target="col-email" checked>
+                        <label for="showEmail" class="form-check-label mb-0 w-100">Email</label>
+                    </li>
+                    <li class="dropdown-item d-flex align-items-center py-2">
+                        <input type="checkbox" id="showPhone" class="form-check-input me-2 col-toggle" data-target="col-phone" checked>
+                        <label for="showPhone" class="form-check-label mb-0 w-100">Phone</label>
+                    </li>
+                    <li class="dropdown-item d-flex align-items-center py-2">
+                        <input type="checkbox" id="showUpdated" class="form-check-input me-2 col-toggle" data-target="col-updated" checked>
+                        <label for="showUpdated" class="form-check-label mb-0 w-100">Updated</label>
+                    </li>
+                    <li class="dropdown-item d-flex align-items-center py-2">
+                        <input type="checkbox" id="showCreated" class="form-check-input me-2 col-toggle" data-target="col-created" checked>
+                        <label for="showCreated" class="form-check-label mb-0 w-100">Added</label>
+                    </li>
+                    <li class="dropdown-item d-flex align-items-center py-2">
+                        <input type="checkbox" id="showStatus" class="form-check-input me-2 col-toggle" data-target="col-status" checked>
+                        <label for="showStatus" class="form-check-label mb-0 w-100">Status</label>
+                    </li>
+                    <li class="dropdown-item d-flex align-items-center py-2">
+                        <input type="checkbox" id="showResume" class="form-check-input me-2 col-toggle" data-target="col-resume" checked>
+                        <label for="showResume" class="form-check-label mb-0 w-100">Resume</label>
+                    </li>
+                    <li class="dropdown-item d-flex align-items-center py-2">
+                        <input type="checkbox" id="showComments" class="form-check-input me-2 col-toggle" data-target="col-comments" checked>
+                        <label for="showComments" class="form-check-label mb-0 w-100">Comments</label>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="statusFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Status
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="statusFilterDropdown" id="status-filter-container">
+                    <li><label class="dropdown-item"><input class="form-check-input me-2 status-filter-input" type="checkbox" value="New" {% if 'New' in selected_statuses %}checked{% endif %}> New</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2 status-filter-input" type="checkbox" value="Telegram" {% if 'Telegram' in selected_statuses %}checked{% endif %}> Telegram</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2 status-filter-input" type="checkbox" value="Test" {% if 'Test' in selected_statuses %}checked{% endif %}> Test</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2 status-filter-input" type="checkbox" value="Trainee" {% if 'Trainee' in selected_statuses %}checked{% endif %}> Trainee</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2 status-filter-input" type="checkbox" value="Working" {% if 'Working' in selected_statuses %}checked{% endif %}> Working</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2 status-filter-input" type="checkbox" value="Refuse" {% if 'Refuse' in selected_statuses %}checked{% endif %}> Refuse</label></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item text-danger" id="resetStatusFilters">Reset Filters</button></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive-container flex-grow-1">
+        <table class="table tasks-list mb-0 table-hover">
+            <thead>
+                <tr>
+                    <th class="col-avatar col-avatar-width">Profile</th>
+
+                    <th class="sortable col-name" data-sort="name">
+                        Name
+                        <span class="sort-indicator">
+                            {% if current_sort == 'name' %}{% if current_direction == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </span>
+                    </th>
+
+                    <th class="sortable col-email" data-sort="email">
+                        Email
+                        <span class="sort-indicator">
+                            {% if current_sort == 'email' %}{% if current_direction == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </span>
+                    </th>
+
+                    <th class="sortable col-phone col-phone-width" data-sort="phone">
+                        Phone
+                        <span class="sort-indicator">
+                            {% if current_sort == 'phone' %}{% if current_direction == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </span>
+                    </th>
+
+                    <th class="sortable col-updated col-date" data-sort="updated">
+                        Updated
+                        <span class="sort-indicator">
+                            {% if current_sort == 'updated' %}{% if current_direction == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </span>
+                    </th>
+
+                    <th class="sortable col-created col-date" data-sort="created">
+                        Added
+                        <span class="sort-indicator">
+                            {% if current_sort == 'created' %}{% if current_direction == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </span>
+                    </th>
+
+                    <th class="sortable col-status col-status-width" data-sort="status">
+                        Status
+                        <span class="sort-indicator">
+                            {% if current_sort == 'status' %}{% if current_direction == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </span>
+                    </th>
+
+                    <th class="col-resume col-resume-width">
+                        Resume
+                    </th>
+
+                    <th class="col-comments col-comments-width">
+                        Comments
+                    </th>
+
+                    <th class="col-action-width">Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in page_obj %}
+                    <tr>
+                      <td class="col-avatar col-avatar-width">
+                        {% if item.avatar %}
+                          <img src="{{ item.avatar.url }}" alt="Profile" loading="lazy" style="width:50px; height:50px; object-fit:cover; border-radius:50%;">
+                        {% elif item.photo_link %}
+                          <img src="{{ item.photo_link }}" alt="Profile" loading="lazy" style="width:50px; height:50px; object-fit:cover; border-radius:50%;">
+                        {% else %}
+                          -
+                        {% endif %}
+                      </td>
+
+                      <td class="col-name">
+                          <a href="{% url 'candidate_profile' pk=item.pk %}" class="fw-bold text-decoration-none">{{ item.full_name }}</a>
+                      </td>
+
+                      <td class="col-email">{{ item.email|default:"—" }}</td>
+                      <td class="col-phone col-phone-width">{{ item.pretty_phone|default:"—" }}</td>
+
+                      <td class="col-updated col-date">
+                          {% if item.updated_at %}{{ item.updated_at|date:"Y-m-d" }}{% else %}—{% endif %}
+                      </td>
+
+                      <td class="col-created col-date">
+                          {% if item.created_at %}{{ item.created_at|date:"Y-m-d" }}{% else %}—{% endif %}
+                      </td>
+
+                        <td class="col-status col-status-width">
+                            <span class="badge link-primary pe-auto
+                                {% if item.status == 'New' %}bg-warning bg-opacity-20 text-warning
+                                {% elif item.status == 'Telegram' %}bg-info bg-opacity-20 text-info
+                                {% elif item.status == 'Test' %}bg-primary bg-opacity-20 text-primary
+                                {% elif item.status == 'Trainee' %}bg-secondary bg-opacity-20 text-secondary
+                                {% elif item.status == 'Working' %}bg-success bg-opacity-20 text-success
+                                {% elif item.status == 'Refuse' %}bg-danger bg-opacity-20 text-danger
+                                {% else %}bg-light text-dark{% endif %}"
+
+                                id="status-display-{{ item.pk }}"
+                                onclick="toggleDropdown({{ item.pk }}, event)"
+                                style="cursor: pointer; display: block; width: 100%; font-size: 0.85rem;"
+                                data-order="{{ item.get_status_display }}">
+
+                                {{ item.get_status_display|default:"New" }}
+                            </span>
+
+                            <div id="status-dropdown-{{ item.pk }}" class="dropdown-menu dropdown-menu-status">
+                                <a href="javascript:void(0)" class="dropdown-item" onclick="selectStatus({{ item.pk }}, 'New')">New</a>
+                                <a href="javascript:void(0)" class="dropdown-item" onclick="selectStatus({{ item.pk }}, 'Telegram')">Telegram</a>
+                                <a href="javascript:void(0)" class="dropdown-item" onclick="selectStatus({{ item.pk }}, 'Test')">Test</a>
+                                <a href="javascript:void(0)" class="dropdown-item" onclick="selectStatus({{ item.pk }}, 'Trainee')">Trainee</a>
+                                <a href="javascript:void(0)" class="dropdown-item" onclick="selectStatus({{ item.pk }}, 'Working')">Working</a>
+                                <a href="javascript:void(0)" class="dropdown-item" onclick="selectStatus({{ item.pk }}, 'No Answer')">No Answer</a>
+                                <a href="javascript:void(0)" class="dropdown-item" onclick="selectStatus({{ item.pk }}, 'Refuse')">Refuse</a>
+                            </div>
+                        </td>
+
+                      <td class="col-resume col-resume-width">
+                          {% if item.resume_link %}
+                            <a href="{{ item.resume_link }}" target="_blank">Link</a>
+                          {% else %}
+                            -
+                          {% endif %}
+                      </td>
+
+                      <td class="col-comments col-comments-width">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#commentModal"
+                                data-pk="{{ item.pk }}"
+                                data-candidate="{{ item.full_name|escapejs }}">
+                            <i class="ph-plus"></i>
+                        </button>
+                      </td>
+
+                      <td class="col-action-width">
+                          <a href="{% url 'candidate_edit' item.pk %}" class="btn-custom btn-edit"><i class="ph-pencil"></i></a>
+                        <form method="post" action="{% url 'candidate_delete' item.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-custom btn-delete" onclick="return confirm('Delete?');" style="border:none; cursor:pointer;">
+                                <i class="ph-trash"></i>
+                            </button>
+                        </form>
+                      </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="10" class="text-center">No records found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="mt-auto mt-3 mb-2">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">&laquo;&laquo;</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">&laquo;</a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">&raquo;</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">&raquo;&raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+</div>
+
+<div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Comments: <span id="modalCandidateName" class="fw-bold"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body bg-light">
+                <div id="modalCommentsList" class="d-flex flex-column gap-2">
+                    <div class="text-center text-muted p-2">Loading...</div>
+                </div>
+            </div>
+
+            <div class="modal-footer d-block">
+                <form id="addCommentForm">
+                    <input type="hidden" id="modalCandidateId">
+                    <div class="input-group">
+                        <textarea class="form-control" id="newCommentText" rows="1" placeholder="Write a comment..." required></textarea>
+                        <button class="btn btn-primary" type="submit">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const colToggles = document.querySelectorAll('.col-toggle');
+        const styleTag = document.getElementById('dynamic-cols-style');
+        const selectAllBtn = document.getElementById('selectAllCols');
+        const deselectAllBtn = document.getElementById('deselectAllCols');
+
+        function applyColumnVisibility() {
+            let css = "";
+            colToggles.forEach(toggle => {
+                const targetClass = toggle.getAttribute('data-target');
+                const isVisible = toggle.checked;
+                localStorage.setItem('col_vis_' + targetClass, isVisible);
+                if (!isVisible) css += `.${targetClass} { display: none !important; } `;
+            });
+            styleTag.innerHTML = css;
+        }
+
+        colToggles.forEach(toggle => {
+            const targetClass = toggle.getAttribute('data-target');
+            const saved = localStorage.getItem('col_vis_' + targetClass);
+            if (saved !== null) toggle.checked = (saved === 'true');
+            toggle.addEventListener('change', applyColumnVisibility);
+        });
+
+        applyColumnVisibility();
+
+        if(selectAllBtn) selectAllBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); colToggles.forEach(t => t.checked = true); applyColumnVisibility(); };
+        if(deselectAllBtn) deselectAllBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); colToggles.forEach(t => t.checked = false); applyColumnVisibility(); };
+        document.querySelectorAll('#view-dropdown, #status-filter-container').forEach(menu => menu.onclick = (e) => e.stopPropagation());
+
+        const statusCheckboxes = document.querySelectorAll('.status-filter-input');
+        const resetFilterBtn = document.getElementById('resetStatusFilters');
+
+        function applyStatusFilter() {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('statusFilter');
+            statusCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    url.searchParams.append('statusFilter', cb.value);
+                }
+            });
+            url.searchParams.set('page', 1);
+            window.location.href = url.toString();
+        }
+
+        statusCheckboxes.forEach(cb => {
+            cb.addEventListener('change', applyStatusFilter);
+        });
+
+        if (resetFilterBtn) {
+            resetFilterBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const url = new URL(window.location.href);
+                url.searchParams.delete('statusFilter');
+                url.searchParams.set('page', 1);
+                window.location.href = url.toString();
+            });
+        }
+
+        document.querySelectorAll('.pagination .page-link').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href.includes('?')) {
+                const linkUrl = new URL(link.href, window.location.origin);
+                const targetPage = linkUrl.searchParams.get('page');
+                const newParams = new URLSearchParams(window.location.search);
+                newParams.set('page', targetPage);
+                link.href = "?" + newParams.toString();
+            }
+        });
+
+        const commentModal = document.getElementById('commentModal');
+        if (commentModal) {
+            commentModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const candidateName = button.getAttribute('data-candidate');
+                const candidateId = button.getAttribute('data-pk');
+
+                document.getElementById('modalCandidateName').textContent = candidateName;
+                document.getElementById('modalCandidateId').value = candidateId;
+                document.getElementById('newCommentText').value = '';
+
+                const listContainer = document.getElementById('modalCommentsList');
+                listContainer.innerHTML = '<div class="text-center text-muted p-3">Loading comments...</div>';
+
+                // AJAX запрос на сервер (URL должен быть в urls.py)
+                $.ajax({
+                    url: "/people/candidates/comments/" + candidateId + "/",
+                    type: 'GET',
+                    success: function(response) {
+                        listContainer.innerHTML = '';
+
+                        if (response.comments.length === 0) {
+                            listContainer.innerHTML = '<div class="text-center text-muted p-3 fst-italic">No comments yet.</div>';
+                        } else {
+                            response.comments.forEach(function(comment) {
+                                renderComment(listContainer, comment);
+                            });
+                        }
+                    },
+                    error: function() {
+                        listContainer.innerHTML = '<div class="text-danger text-center">Error loading comments.</div>';
+                    }
+                });
+            });
+
+            // Отправка нового комментария
+            document.getElementById('addCommentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const candidateId = document.getElementById('modalCandidateId').value;
+                const textVal = document.getElementById('newCommentText').value;
+                const listContainer = document.getElementById('modalCommentsList');
+                const csrfToken = '{{ csrf_token }}';
+
+                if(!textVal.trim()) return;
+
+                $.ajax({
+                    url: "/people/candidates/comments/" + candidateId + "/",
+                    type: 'POST',
+                    data: {
+                        'text': textVal,
+                        'csrfmiddlewaretoken': csrfToken
+                    },
+                    success: function(response) {
+                        if(response.status === 'success') {
+                            if (listContainer.innerText.includes('No comments yet')) {
+                                listContainer.innerHTML = '';
+                            }
+                            renderComment(listContainer, response.comment, true);
+                            document.getElementById('newCommentText').value = '';
+                        }
+                    },
+                    error: function() {
+                        alert('Error saving comment');
+                    }
+                });
+            });
+        }
+    });
+
+    function renderComment(container, comment, isNew = false) {
+        const div = document.createElement('div');
+        div.className = "p-2 bg-white border rounded shadow-sm";
+        if(isNew) div.style.borderColor = "#0d6efd";
+
+        div.innerHTML = `
+            <div class="d-flex justify-content-between small text-muted mb-1">
+                <span class="fw-bold text-dark">${comment.user}</span>
+                <span>${comment.date}</span>
+            </div>
+            <div class="text-break" style="white-space: pre-wrap;">${comment.text}</div>
+        `;
+        container.prepend(div);
+    }
+
+    function toggleDropdown(itemId, event) {
+        if(event) event.stopPropagation();
+
+        var dropdown = document.getElementById("status-dropdown-" + itemId);
+        var badge = document.getElementById("status-display-" + itemId);
+
+        document.querySelectorAll('.dropdown-menu-status').forEach(menu => {
+            if (menu.id !== "status-dropdown-" + itemId) menu.style.display = "none";
+        });
+
+        var isHidden = (getComputedStyle(dropdown).display === "none");
+
+        if (isHidden) {
+            var rect = badge.getBoundingClientRect();
+            dropdown.style.top = (rect.bottom + window.scrollY + 2) + "px";
+            dropdown.style.left = rect.left + "px";
+            dropdown.style.display = "block";
+
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!dropdown.contains(e.target) && e.target !== badge) {
+                        dropdown.style.display = "none";
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+                window.addEventListener('scroll', function closeOnScroll() {
+                     dropdown.style.display = "none";
+                     window.removeEventListener('scroll', closeOnScroll);
+                }, {once:true, capture: true});
+            }, 0);
+        } else {
+            dropdown.style.display = "none";
+        }
+    }
+
+    function selectStatus(itemId, newStatus) {
+        $.ajax({
+            url: "/people/candidates/update-status/" + itemId + "/",
+            type: 'POST',
+            data: {
+                'status': newStatus,
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+            },
+            success: function(response) {
+                var statusDisplay = document.getElementById("status-display-" + itemId);
+                statusDisplay.innerHTML = newStatus;
+                statusDisplay.className = "badge link-primary pe-auto " + getStatusClass(newStatus);
+                document.getElementById("status-dropdown-" + itemId).style.display = "none";
+            },
+            error: function(xhr, errmsg, err) {
+                alert("Error updating status: " + errmsg);
+            }
+        });
+    }
+
+    function getStatusClass(status) {
+        switch (status) {
+            case 'New': return 'bg-warning bg-opacity-20 text-warning';
+            case 'Telegram': return 'bg-info bg-opacity-20 text-info';
+            case 'Test': return 'bg-primary bg-opacity-20 text-primary';
+            case 'Trainee': return 'bg-secondary bg-opacity-20 text-secondary';
+            case 'Working': return 'bg-success bg-opacity-20 text-success';
+            case 'Refuse': return 'bg-danger bg-opacity-20 text-danger';
+            default: return 'bg-light text-dark';
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSort = urlParams.get('sort') || 'created';
+        const currentDir = urlParams.get('direction') || 'desc';
+
+        const headers = document.querySelectorAll('.sortable');
+        headers.forEach(th => {
+            th.addEventListener('click', () => {
+                const sortField = th.getAttribute('data-sort');
+                let newDir = 'asc';
+
+                if (sortField === currentSort) {
+                    newDir = (currentDir === 'asc') ? 'desc' : 'asc';
+                }
+                const url = new URL(window.location.href);
+                url.searchParams.set('sort', sortField);
+                url.searchParams.set('direction', newDir);
+                url.searchParams.set('page', 1);
+                window.location.href = url.toString();
+            });
+        });
+    });
+</script>
+</body>
+</html>

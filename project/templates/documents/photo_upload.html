@@ -1,0 +1,111 @@
+{% extends "documents/_upload_base.html" %}
+
+{% block upload_form %}
+<div class="card p-3 mb-4" id="photoForm">
+  <div class="d-flex gap-2 mb-3">
+    <button type="button" class="btn btn-primary flex-fill" id="cameraBtn">
+      <i class="ph-camera me-1"></i>Take Photo
+    </button>
+    <button type="button" class="btn btn-success flex-fill" id="galleryBtn">
+      <i class="ph-image me-1"></i>Choose from Gallery
+    </button>
+  </div>
+  
+  <input type="file" id="cameraInput" accept="image/*" capture="environment" class="d-none">
+  <input type="file" id="galleryInput" accept="image/*" class="d-none">
+  
+  <div id="photoPreview" class="d-none mb-3">
+    <img id="previewImage" class="img-fluid rounded" style="max-height: 200px;">
+  </div>
+  
+  <button class="btn btn-primary d-none" type="button" id="uploadBtn">
+    <span id="uploadBtnText">Upload Photo</span>
+    <span id="uploadSpinner" class="d-none">
+      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+      Processing Photo...
+    </span>
+  </button>
+</div>
+{% endblock %}
+
+{% block processing_text %}Parsing photo and extracting data{% endblock %}
+{% block empty_text %}No photos uploaded yet{% endblock %}
+{% block clear_history_type %}photos{% endblock %}
+
+{% block page_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cameraBtn = document.getElementById('cameraBtn');
+    const galleryBtn = document.getElementById('galleryBtn');
+    const cameraInput = document.getElementById('cameraInput');
+    const galleryInput = document.getElementById('galleryInput');
+    const photoPreview = document.getElementById('photoPreview');
+    const previewImage = document.getElementById('previewImage');
+    const uploadBtn = document.getElementById('uploadBtn');
+    
+    let selectedFile = null;
+
+    cameraBtn.addEventListener('click', function() {
+        cameraInput.click();
+    });
+
+    galleryBtn.addEventListener('click', function() {
+        galleryInput.click();
+    });
+
+    function handleFileSelect(file) {
+        if (!file) return;
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            photoPreview.classList.remove('d-none');
+            uploadBtn.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    cameraInput.addEventListener('change', function() {
+        handleFileSelect(this.files[0]);
+    });
+
+    galleryInput.addEventListener('change', function() {
+        handleFileSelect(this.files[0]);
+    });
+
+    uploadBtn.addEventListener('click', function() {
+        if (!selectedFile) return;
+        
+        setUploadButtonState('uploadBtn', true);
+
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server error: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            clearUploadTimeout();
+            if (data.success && data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                handleUploadError('uploadBtn', data.error || 'Unknown error');
+            }
+        })
+        .catch(error => {
+            handleNetworkError('uploadBtn', error.message);
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,206 @@
+from django.shortcuts import redirect, render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.http import HttpResponse, JsonResponse
+from django.conf import settings
+import json
+import os
+
+from .models import DocumentUpload, DocumentPhoto
+from .forms import DispoliveReportForm as ReviewForm, DocumentPhotoForm
+from .mixins import DocumentUploadMixin
+from .services.dispolive_logger import get_dispolive_logger
+
+from dispolive_de.parser_new import build_payload
+from dispolive_de.api_client import create_driver_report
+
+
+# DocumentUploadMixin instance for reusable logic
+document_mixin = DocumentUploadMixin()
+
+
+@login_required
+def upload(request):
+    """PDF upload view using DocumentUploadMixin for DRY"""
+    if request.method == "POST" and request.FILES.get("file"):
+        f = request.FILES["file"]
+        
+        # Create upload object using mixin
+        upload_obj = document_mixin.create_upload_object(
+            user=request.user,
+            original_name=f.name,
+            file=f
+        )
+        
+        # Process and parse document using mixin
+        success, error = document_mixin.process_and_parse_document(
+            upload_obj=upload_obj,
+            file_path=upload_obj.file.path,
+            is_photo=False
+        )
+        
+        if success:
+            return redirect("documents:review", pk=upload_obj.pk)
+        
+        return redirect("documents:upload")
+    
+    # Get recent uploads using mixin
+    uploads = document_mixin.get_recent_uploads(user=request.user, photo_only=False)
+    return render(request, "documents/upload.html", {
+        "uploads": uploads,
+        "title": "Upload PDF"
+    })
+
+
+@login_required
+def review(request, pk):
+    logger = get_dispolive_logger()
+    upload_obj = get_object_or_404(DocumentUpload, pk=pk, user=request.user)
+    
+    if upload_obj.processing_status not in ["pending_review", "done", "error"]:
+        return redirect("documents:upload")
+    
+    parsed_data = upload_obj.parsed_data or {}
+    error_message = upload_obj.processing_error if upload_obj.processing_status == "error" else ""
+    
+    if request.method == "POST":
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            updated_data = form.to_parsed_data()
+            upload_obj.parsed_data = updated_data
+            
+            try:
+                payload = build_payload(updated_data)
+                logger.info("Preparing Dispolive | upload_id=%s user_id=%s", upload_obj.pk, request.user.pk)
+                upload_obj.dispolive_payload = payload
+                
+                api_resp = create_driver_report(payload)
+                
+                if api_resp is None:
+                    logger.error("Dispolive FAILED | upload_id=%s", upload_obj.pk)
+                    upload_obj.processing_status = "error"
+                    upload_obj.processing_error = "Dispolive API returned an error. Check required fields."
+                    upload_obj.save(update_fields=["parsed_data", "dispolive_payload", "processing_status", "processing_error"])
+                    error_message = upload_obj.processing_error
+                else:
+                    logger.info("Dispolive SUCCESS | upload_id=%s", upload_obj.pk)
+                    upload_obj.processing_status = "done"
+                    upload_obj.processing_error = ""
+                    upload_obj.save(update_fields=["parsed_data", "dispolive_payload", "processing_status", "processing_error"])
+                    return redirect("documents:upload")
+                    
+            except Exception as e:
+                logger.exception("Dispolive EXCEPTION | upload_id=%s", upload_obj.pk)
+                upload_obj.processing_status = "error"
+                upload_obj.processing_error = str(e)
+                upload_obj.save(update_fields=["parsed_data", "processing_status", "processing_error"])
+                error_message = upload_obj.processing_error
+    else:
+        form = ReviewForm.from_parsed_data(parsed_data)
+    
+    # Prepare Dispolive payload for display (preview from parsed_data)
+    dispolive_payload_json = None
+    try:
+        preview_payload = build_payload(parsed_data)
+        dispolive_payload_json = json.dumps(preview_payload, indent=2, ensure_ascii=False)
+    except Exception as e:
+        logger.warning("Failed to build payload preview for upload_id=%s: %s", upload_obj.pk, str(e))
+        # Provide fallback JSON display
+        dispolive_payload_json = json.dumps(parsed_data, indent=2, ensure_ascii=False)
+    
+    return render(request, "documents/review.html", {
+        "upload": upload_obj,
+        "form": form,
+        "error_message": error_message,
+        "dispolive_payload": dispolive_payload_json,
+    })
+
+
+@login_required
+@require_POST
+def clear_history(request):
+    DocumentUpload.objects.filter(user=request.user).delete()
+    messages.success(request, "Upload history cleared successfully.")
+    return redirect("documents:upload")
+
+
+@login_required
+def dispolive_log(request):
+    log_path = os.path.join(settings.BASE_DIR, "logs", "dispolive.log")
+    if not os.path.exists(log_path):
+        return HttpResponse("Log file not found", content_type="text/plain")
+    with open(log_path, "r", encoding="utf-8") as fh:
+        content = fh.read()
+    response = HttpResponse(content, content_type="text/plain; charset=utf-8")
+    response["Content-Disposition"] = "inline; filename=dispolive.log"
+    return response
+
+
+@login_required
+def photo_upload(request):
+    """Photo upload view using DocumentUploadMixin for DRY"""
+    if request.method == "POST":
+        form = DocumentPhotoForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Create upload and photo objects using mixin
+            upload_obj, photo = document_mixin.create_photo_upload_object(
+                user=request.user,
+                photo_form=form
+            )
+            
+            # Process and parse photo using mixin
+            success, error = document_mixin.process_and_parse_document(
+                upload_obj=upload_obj,
+                file_path=photo.image.path,
+                is_photo=True
+            )
+            
+            # Handle AJAX response
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return document_mixin.handle_ajax_response(success, upload_obj, error)
+            
+            if success:
+                return redirect("documents:review", pk=upload_obj.pk)
+            return redirect('documents:photo_upload')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'errors': form.errors
+                }, status=400)
+    else:
+        form = DocumentPhotoForm()
+    
+    # Get recent photo uploads using mixin
+    uploads = document_mixin.get_recent_uploads(user=request.user, photo_only=True)
+    
+    return render(request, 'documents/photo_upload.html', {
+        'form': form,
+        'uploads': uploads,
+        'title': 'Photo Upload'
+    })
+
+
+@login_required
+def photo_gallery(request):
+    """Display all photos uploaded by the user"""
+    photos = DocumentPhoto.objects.filter(
+        user=request.user
+    ).select_related('document').order_by('-created_at')
+    
+    # Group photos by document
+    documents = {}
+    for photo in photos:
+        doc_id = photo.document.id
+        if doc_id not in documents:
+            documents[doc_id] = {
+                'document': photo.document,
+                'photos': []
+            }
+        documents[doc_id]['photos'].append(photo)
+    
+    return render(request, 'documents/photo_gallery.html', {
+        'documents': list(documents.values()),
+        'total_photos': photos.count()
+    })

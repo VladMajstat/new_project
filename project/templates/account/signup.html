@@ -1,0 +1,85 @@
+{% extends "account/base.html" %}
+{% load form_tags %}
+{% load static %}
+
+{% block title %}
+    Sign Up
+{% endblock title %}
+
+{% block content_area %}
+
+    <div class="content d-flex justify-content-center align-items-center">
+        
+        <!-- Registration form -->
+        <form class="login-form" action="{% url 'account_signup' %}" method="post">
+            {% csrf_token %}
+            <div class="card mb-0">
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="d-inline-flex align-items-center justify-content-center mb-4 mt-2">
+                            <img src="{% static 'main_app/img/icons/favicon.jpg' %}" class="h-48px w-48px rounded-4" alt="">
+                        </div>
+                        <h5 class="mb-0">Create account</h5>
+                        <span class="d-block text-muted">All fields are required</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <div class="form-control-feedback form-control-feedback-start">
+                            {{ form.username|add_params:"form-control text username" }}
+                            <div class="form-control-feedback-icon">
+                                <i class="ph-user-circle text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <div class="form-control-feedback form-control-feedback-start">
+                            {{ form.password1|add_params:"form-control password •••••••••••" }}
+                            <div class="form-control-feedback-icon">
+                                <i class="ph-lock text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Repeat Password</label>
+                        <div class="form-control-feedback form-control-feedback-start">
+                            {{ form.password2|add_params:"form-control password •••••••••••" }}
+                            <div class="form-control-feedback-icon">
+                                <i class="ph-lock text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center text-muted content-divider mb-3">
+                        <span class="px-2">Your contacts</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <div class="form-control-feedback form-control-feedback-start">
+                            {{ form.email|add_params:"form-control email example@example.com" }}
+                            <div class="form-control-feedback-icon">
+                                <i class="ph-at text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-teal w-100">Register</button>
+                    </div>
+
+                    <span class="form-text text-center text-muted">
+                        By continuing, you're confirming that you've read our 
+                        <a href="#">Terms & Conditions</a> and <a href="#">Cookie Policy</a>.
+                    </span>
+                </div>
+            </div>
+
+        </form>
+        <!-- /registration form -->
+
+    </div>
+{% endblock content_area %}

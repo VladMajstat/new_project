@@ -1,0 +1,21 @@
+{% extends "documents/base_upload.html" %}
+{% load static %}
+
+{% block extra_js %}
+<script src="{% static 'js/universal_upload.js' %}"></script>
+<script>
+// Конфігурація для універсального завантаження (всі типи)
+window.uploadConfig = {
+    uploadType: 'document',
+    acceptedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/tiff', 'image/bmp', 'image/webp'],
+    mobileOptimized: true,
+    showCameraButton: true,
+    maxFileSizeMb: 20,
+    uploadUrl: '{% url "documents:universal_upload" %}'
+};
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/universal_upload.css' %}">
+{% endblock %}

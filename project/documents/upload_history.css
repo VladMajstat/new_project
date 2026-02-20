@@ -1,0 +1,217 @@
+/* Recent uploads - compact icon-only styles */
+
+/* Upload item layout */
+.upload-item {
+    list-style: none;
+    margin-bottom: 0.75rem;
+    padding: 0;
+}
+
+.upload-item-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.upload-item:last-child .upload-item-content {
+    border-bottom: none;
+}
+
+/* Upload info section */
+.upload-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0; /* Allow text truncation */
+}
+
+.upload-date {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.upload-name {
+    font-size: 0.875rem;
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Upload actions section */
+.upload-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* Icon button base styles */
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-icon:active {
+    transform: translateY(0);
+}
+
+.btn-icon i {
+    line-height: 1;
+}
+
+/* Icon button color variants */
+.btn-icon-warning {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.btn-icon-warning:hover {
+    background-color: #ffb300;
+    color: #000;
+}
+
+.btn-icon-success {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.btn-icon-success:hover {
+    background-color: #218838;
+    color: #fff;
+}
+
+.btn-icon-secondary {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+.btn-icon-secondary:hover {
+    background-color: #5a6268;
+    color: #fff;
+}
+
+.btn-icon-danger {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.btn-icon-danger:hover {
+    background-color: #c82333;
+    color: #fff;
+}
+
+.btn-icon-info {
+    background-color: #17a2b8;
+    color: #fff;
+    cursor: default;
+}
+
+/* Spinner animation */
+.ph-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .upload-item-content {
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+    }
+    
+    .upload-info {
+        gap: 0.125rem;
+    }
+    
+    .upload-date {
+        font-size: 0.8125rem;
+    }
+    
+    .upload-name {
+        font-size: 0.8125rem;
+        max-width: 180px; /* Limit width on mobile */
+    }
+    
+    .upload-actions {
+        gap: 0.375rem;
+    }
+    
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1.125rem;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .upload-item-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .upload-info {
+        width: 100%;
+    }
+    
+    .upload-name {
+        max-width: 100%;
+    }
+    
+    .upload-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* History card styles */
+#historyCard {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+#historyCard ul {
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+/* Empty state */
+#historyList:empty::after {
+    content: 'No uploads yet';
+    display: block;
+    text-align: center;
+    color: #6c757d;
+    padding: 2rem;
+    font-size: 0.875rem;
+}

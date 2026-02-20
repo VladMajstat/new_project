@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+  <div class="container py-4">
+    <h3 class="mb-3">{{ title }}</h3>
+
+        <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4">
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'upload' %}active{% endif %}" 
+           href="{% url 'documents:upload' %}">
+          <i class="ph-file-pdf me-1"></i>PDF Upload
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'photo_upload' %}active{% endif %}" 
+           href="{% url 'documents:photo_upload' %}">
+          <i class="ph-camera me-1"></i>Phone Upload
+        </a>
+      </li>
+    </ul>
+
+    {% block upload_form %}{% endblock %}
+
+    {% block processing_alert %}
+    <div id="processingAlert" class="alert alert-info d-none mb-4">
+      <div class="d-flex align-items-center">
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        <span><strong>Processing:</strong> {{ processing_text }}. Please wait...</span>
+      </div>
+    </div>
+    {% endblock %}
+
+    {% block recent_uploads %}
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <h5 class="mb-0">Recent uploads</h5>
+      <div class="d-flex align-items-center gap-3">
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="toggleHistory" checked>
+          <label class="form-check-label small" for="toggleHistory">Show history</label>
+        </div>
+        <button type="button" class="btn btn-outline-danger btn-sm" id="clearHistoryBtn" 
+                data-bs-toggle="modal" data-bs-target="#clearHistoryModal">
+          Clear history
+        </button>
+      </div>
+    </div>
+    <div class="card p-3" id="historyCard">
+      <ul class="mb-0" id="historyList">
+        {% for u in uploads %}
+          <li class="upload-item">
+            <div class="upload-item-content">
+              <div class="upload-info">
+                <span class="upload-date">{{ u.created_at|date:"Y-m-d H:i" }}</span>
+                <span class="upload-name">{{ u.original_name }}</span>
+              </div>
+              <div class="upload-actions">
+                {% if u.processing_status == "pending_review" %}
+                  <a href="{% url 'documents:review' pk=u.pk %}" class="btn-icon btn-icon-warning" title="Review & Confirm">
+                    <i class="ph-pencil"></i>
+                  </a>
+                {% elif u.processing_status == "done" %}
+                  <button type="button" class="btn-icon btn-icon-success" title="Sent to Dispolive" 
+                          data-bs-toggle="modal" data-bs-target="#logModal" 
+                          data-log-status="success" data-log-id="{{ u.pk }}" data-log-name="{{ u.original_name }}">
+                    <i class="ph-check-circle"></i>
+                  </button>
+                  <a href="{% url 'documents:review' pk=u.pk %}" class="btn-icon btn-icon-secondary" title="View Data">
+                    <i class="ph-eye"></i>
+                  </a>
+                {% elif u.processing_status == "processing" %}
+                  <span class="btn-icon btn-icon-info" title="Processing...">
+                    <i class="ph-spinner ph-spin"></i>
+                  </span>
+                {% elif u.processing_status == "error" %}
+                  <button type="button" class="btn btn-danger btn-sm" title="Error" 
+                          data-bs-toggle="modal" data-bs-target="#logModal" 
+                          data-log-status="error" data-log-id="{{ u.pk }}" data-log-name="{{ u.original_name }}" data-log-error="{{ u.processing_error }}">
+                    <i class="ph-x-circle"></i>
+                  </button>
+                {% else %}
+                  <span class="badge bg-secondary">{{ u.processing_status }}</span>
+                {% endif %}
+              </div>
+            </div>
+            {% if u.processing_status == "error" and u.processing_error %}
+              <div class="text-danger small mt-1">
+                <i class="ph-warning me-1"></i>{{ u.processing_error }}
+              </div>
+            {% endif %}
+          </li>
+        {% empty %}
+          <li>{{ empty_text }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endblock %}
+  </div>
+
+    <!-- Log Status Modal -->
+    <div class="modal fade" id="logModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header" id="logModalHeader">
+            <h5 class="modal-title" id="logModalTitle">Status Log</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <pre id="logModalBody" class="bg-light p-3 rounded small mb-0" style="white-space: pre-wrap;"></pre>
+          </div>
+          <div class="modal-footer">
+            <a href="{% url 'documents:dispolive_log' %}" target="_blank" class="btn btn-outline-secondary btn-sm">
+              <i class="ph-file-text me-1"></i>Open full log file
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clear History Modal -->
+    <div class="modal fade" id="clearHistoryModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Clear Upload History</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete all uploaded {{ clear_history_type }}? This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <form method="post" action="{% url 'documents:clear_history' %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger">Clear All</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'documents/upload_history.css' %}">
+{% endblock %}
+
+{% block import_js %}
+<script src="{% static 'js/upload_common.js' %}"></script>
+{% block page_js %}{% endblock %}
+{% endblock %}

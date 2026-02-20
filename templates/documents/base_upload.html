@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if upload_type == 'pdf' %}Завантаження PDF
+    {% elif upload_type == 'photo' %}Завантаження фото
+    {% elif upload_type == 'document' %}Завантаження документів
+    {% else %}Завантаження файлів{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header {% if upload_type == 'pdf' %}bg-warning{% elif upload_type == 'photo' %}bg-primary{% else %}bg-info{% endif %} text-white">
+                    <h4 class="mb-0">
+                        {% if upload_type == 'pdf' %}
+                            <i class="fas fa-file-pdf"></i> Завантаження PDF
+                        {% elif upload_type == 'photo' %}
+                            <i class="fas fa-camera"></i> Завантаження фото
+                        {% elif upload_type == 'document' %}
+                            <i class="fas fa-file-alt"></i> Завантаження документів
+                        {% else %}
+                            <i class="fas fa-upload"></i> Завантаження файлів
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Блок для мобільних пристроїв з кнопками камери/галереї -->
+                    {% if show_camera_button %}
+                    <div class="text-center mb-4">
+                        <button type="button" id="camera-btn" class="btn btn-primary btn-lg m-2">
+                            <i class="fas fa-camera"></i> Зробити фото
+                        </button>
+                        <button type="button" id="gallery-btn" class="btn btn-secondary btn-lg m-2">
+                            <i class="fas fa-images"></i> Вибрати з галереї
+                        </button>
+                        
+                        {% if upload_type == 'document' %}
+                        <button type="button" id="pdf-btn" class="btn btn-warning btn-lg m-2">
+                            <i class="fas fa-file-pdf"></i> Вибрати PDF
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Drag & Drop область -->
+                    <div id="drop-zone" class="drop-zone text-center mb-4" style="min-height: 200px; border: 3px dashed #007bff; padding: 40px; border-radius: 12px; background-color: rgba(0,123,255,0.05); cursor: pointer;">
+                        <div id="drop-zone-content">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">
+                                {% if upload_type == 'pdf' %}
+                                    Перетягніть PDF файл сюди
+                                {% elif upload_type == 'photo' %}
+                                    Перетягніть фото або PDF сюди
+                                {% elif upload_type == 'document' %}
+                                    Перетягніть документ сюди
+                                {% else %}
+                                    Перетягніть файл сюди
+                                {% endif %}
+                            </h5>
+                            <p class="text-muted">або</p>
+                            <button type="button" id="file-select-btn" class="btn btn-outline-primary">
+                                <i class="fas fa-folder-open"></i> Вибрати файл
+                            </button>
+                            <p class="text-muted small mt-2">
+                                Підтримувані формати: {{ accepted_mime_types|join:", "|default:"будь-які" }}
+                            </p>
+                            <p class="text-muted small">
+                                Максимальний розмір: {{ max_file_size_mb }}MB
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Блок прев'ю зображення -->
+                    <div id="image-preview" class="text-center mb-4" style="display: none;">
+                        <h5 class="mb-3">Попередній перегляд</h5>
+                        <div id="preview-container" style="max-height: 300px; overflow: auto;">
+                            <!-- Зображення буде додано тут -->
+                        </div>
+                        <div id="file-info" class="mt-3">
+                            <!-- Інформація про файл -->
+                        </div>
+                    </div>
+
+                    <!-- Стандартна форма (для сумісності) -->
+                    {% if upload_type == 'photo' and form %}
+                    <form id="photo-upload-form" method="post" enctype="multipart/form-data" action="{% url 'documents:photo_upload' %}" style="display: none;">
+                        {% csrf_token %}
+                        {{ form }}
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-upload"></i> Завантажити
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Універсальна форма завантаження -->
+                    <form id="universal-upload-form" method="post" enctype="multipart/form-data" style="display: none;">
+                        {% csrf_token %}
+                        <input type="file" name="file" id="file-input" accept="{{ accepted_mime_types|join:',' }}" {% if mobile_optimized %}capture="environment"{% endif %}>
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-upload"></i> Завантажити
+                        </button>
+                    </form>
+
+                    <!-- Індикатор завантаження -->
+                    <div id="loading-indicator" class="text-center" style="display: none; padding: 40px; background-color: rgba(255,255,255,0.9); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Завантаження...</span>
+                        </div>
+                        <h5 class="mt-3">Обробка документа...</h5>
+                        <p class="text-muted">Будь ласка, зачекайте</p>
+                        <div class="progress mt-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Блок помилок -->
+                    <div id="error-message" class="alert alert-danger mt-3" style="display: none;">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Помилка</h5>
+                        <p id="error-text"></p>
+                    </div>
+
+                    <!-- Історія завантажень -->
+                    <div class="mt-4">
+                        <h5>Останні завантаження</h5>
+                        <div class="list-group">
+                            {% for upload in uploads %}
+                            <a href="{% url 'documents:review' upload.pk %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">
+                                        {% if upload.file_type == 'application/pdf' %}
+                                            <i class="fas fa-file-pdf text-danger"></i>
+                                        {% elif upload.file_type and upload.file_type.startswith('image/') %}
+                                            <i class="fas fa-image text-success"></i>
+                                        {% else %}
+                                            <i class="fas fa-file text-muted"></i>
+                                        {% endif %}
+                                        {{ upload.original_name }}
+                                    </h6>
+                                    <small>{{ upload.created_at|date:"H:i d.m.Y" }}</small>
+                                </div>
+                                <div class="d-flex w-100 justify-content-between">
+                                    <small class="text-muted">ID: {{ upload.id }}</small>
+                                    <span class="badge 
+                                        {% if upload.processing_status == 'completed' %}bg-success
+                                        {% elif upload.processing_status == 'processing' %}bg-warning
+                                        {% elif upload.processing_status == 'error' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ upload.get_processing_status_display }}
+                                    </span>
+                                </div>
+                            </a>
+                            {% empty %}
+                            <div class="list-group-item text-muted text-center">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>Немає завантажень</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/universal_upload.js' %}"></script>
+<script>
+// Конфігурація для JavaScript
+window.uploadConfig = {
+    uploadType: '{{ upload_type }}',
+    acceptedMimeTypes: {{ accepted_mime_types|safe }},
+    mobileOptimized: {{ mobile_optimized|yesno:"true,false" }},
+    showCameraButton: {{ show_camera_button|yesno:"true,false" }},
+    maxFileSizeMb: {{ max_file_size_mb }},
+    uploadUrl: '{% if upload_type == "pdf" %}{% url "documents:upload" %}{% elif upload_type == "photo" %}{% url "documents:photo_upload" %}{% else %}{% url "documents:universal_upload" %}{% endif %}'
+};
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/universal_upload.css' %}">
+{% endblock %}

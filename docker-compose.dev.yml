@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: base_template_pg
+    restart: always
+    environment:
+      POSTGRES_USER: userdb
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: crawler_db
+    ports:
+      - "5437:5432"
+    volumes:
+      - base_template:/var/lib/postgresql/data
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: base_tempate_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5057:80"
+    depends_on:
+      - postgres
+
+volumes:
+  base_template:

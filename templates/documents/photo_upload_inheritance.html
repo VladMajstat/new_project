@@ -1,0 +1,21 @@
+{% extends "documents/base_upload.html" %}
+{% load static %}
+
+{% block extra_js %}
+<script src="{% static 'js/universal_upload.js' %}"></script>
+<script>
+// Конфігурація для фото завантаження (фото + PDF)
+window.uploadConfig = {
+    uploadType: 'photo',
+    acceptedMimeTypes: ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'application/pdf'],
+    mobileOptimized: true,
+    showCameraButton: true,
+    maxFileSizeMb: 15,
+    uploadUrl: '{% url "documents:photo_upload" %}'
+};
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/universal_upload.css' %}">
+{% endblock %}

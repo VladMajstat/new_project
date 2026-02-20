@@ -1,0 +1,53 @@
+{% extends "account/base.html" %}
+{% load form_tags %}
+{% load static %}
+
+{% block title %}
+    Sign In
+{% endblock title %}
+
+{% block content_area %}
+
+    <div class="content d-flex justify-content-center align-items-center">
+
+        <form class="login-form" action="{% url 'account_login' %}" method="post">
+            {% csrf_token %}
+            <div class="card mb-0">
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="d-inline-flex align-items-center justify-content-center mb-4 mt-2">
+                            <img src="{% static 'task_manager/img/icons/favicon.jpg' %}" class="h-48px w-48px rounded-4" alt="">
+                        </div>
+                        <h5 class="mb-0">Login to your account</h5>
+                        <span class="d-block text-muted">Enter your credentials below</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Login</label>
+                        <div class="form-control-feedback form-control-feedback-start">
+                            {{ form.login|add_params:"form-control text username" }}
+                            <div class="form-control-feedback-icon">
+                                <i class="ph-user-circle text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <div class="form-control-feedback form-control-feedback-start">
+                            {{ form.password|add_params:"form-control password •••••••••••" }}
+                            <div class="form-control-feedback-icon">
+                                <i class="ph-lock text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+        
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-primary w-100">Sign in</button>
+                    </div>
+                </div>
+            </div>
+        </form>        
+        
+    </div>
+{% endblock content_area %}

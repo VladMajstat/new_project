@@ -1,0 +1,158 @@
+
+{% load static %}
+
+{% block title %}Edit Candidate{% endblock title %}
+
+{% block content_area %}
+    <div class="tab-content" id="adminTabsContent">
+        <div class="card rounded-0">
+            <div class="card-body">
+
+                {% if messages %}
+                  <div class="container mt-3">
+                    {% for message in messages %}
+                      <div class="alert
+                           {% if message.tags == 'error' %}alert-danger
+                           {% elif message.tags == 'success' %}alert-success
+                           {% elif message.tags == 'warning' %}alert-warning
+                           {% else %}alert-info{% endif %}
+                           alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0">Edit Candidate: {{ candidate.full_name }}</h4>
+                    <a href="{% url 'candidates_list' %}" class="btn btn-outline-secondary btn-sm rounded-0">
+                        Back to List
+                    </a>
+                </div>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label"><b>Full Name:</b></label>
+                            <input type="text" name="full_name" class="form-control rounded-0"
+                                   placeholder="Enter full name" value="{{ candidate.full_name|default:'' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Email:</b></label>
+                            <input type="email" name="email" class="form-control rounded-0"
+                                   value="{{ candidate.email|default:'' }}">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Phone:</b></label>
+                            <input type="text" name="phone" class="form-control rounded-0" placeholder="066 123 45 67"
+                                   value="{{ candidate.phone|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Source:</b></label>
+                            <select name="source" class="form-select rounded-0">
+                                <option value="Response" {% if candidate.source == 'Response' %}selected{% endif %}>Response</option>
+                                <option value="Contacts" {% if candidate.source == 'Contacts' %}selected{% endif %}>Contacts</option>
+                                <option value="Applied" {% if candidate.source == 'Applied' %}selected{% endif %}>Applied</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Status:</b></label>
+                            <select name="status" class="form-select rounded-0">
+                                <option value="New" {% if candidate.status == 'New' %}selected{% endif %}>New</option>
+                                <option value="Telegram" {% if candidate.status == 'Telegram' %}selected{% endif %}>Telegram</option>
+                                <option value="Test" {% if candidate.status == 'Test' %}selected{% endif %}>Test</option>
+                                <option value="Trainee" {% if candidate.status == 'Trainee' %}selected{% endif %}>Trainee</option>
+                                <option value="Working" {% if candidate.status == 'Working' %}selected{% endif %}>Working</option>
+                                <option value="No Answer" {% if candidate.status == 'No Answer' %}selected{% endif %}>No Answer</option>
+                                <option value="Refuse" {% if candidate.status == 'Refuse' %}selected{% endif %}>Refuse</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Department:</b></label>
+                            <select name="department" class="form-select rounded-0">
+                                <option value="">---------</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}"
+                                        {% if candidate.department_id == dept.id %}selected{% endif %}>
+                                        {{ dept.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>City:</b></label>
+                            <input type="text" name="city" class="form-control rounded-0" placeholder="e.g. New York"
+                                   value="{{ candidate.city|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Birth Date:</b></label>
+                            <input type="date" name="birth_date" class="form-control rounded-0"
+                                   value="{{ candidate.birth_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Profile Photo:</b></label>
+                            <input type="file" name="photo" class="form-control rounded-0" accept="image/*">
+
+                            {% if candidate.profile_photo %}
+                                <div class="mt-2 d-flex align-items-center p-2 border bg-light w-auto d-inline-flex">
+                                    <img src="{{ candidate.profile_photo.url }}" alt="Current photo"
+                                         class="rounded shadow-sm me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                    <div>
+                                        <small class="text-muted d-block">Current photo</small>
+                                        <small><a href="{{ candidate.profile_photo.url }}" target="_blank">View full size</a></small>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Resume Link:</b></label>
+                            <input type="url" name="resume_link" class="form-control rounded-0" placeholder="Google Drive / LinkedIn link"
+                                   value="{{ candidate.resume_link|default:'' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Telegram Link:</b></label>
+                            <input type="url" name="telegram_link" class="form-control rounded-0" placeholder="https://t.me/username"
+                                   value="{{ candidate.telegram_link|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label"><b>Cover Letter / Notes:</b></label>
+                            <textarea name="cover" class="form-control rounded-0" rows="5"
+                                      placeholder="Paste cover letter or notes here...">{{ candidate.cover|default:'' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="text-end mt-3">
+                        <button type="submit" class="btn btn-success rounded-0 px-4">
+                            <i class="ph-paper-plane-tilt me-2"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content_area %}

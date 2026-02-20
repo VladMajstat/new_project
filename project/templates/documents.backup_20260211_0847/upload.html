@@ -1,0 +1,31 @@
+{% extends "documents/_upload_base.html" %}
+
+{% block upload_form %}
+<form method="post" enctype="multipart/form-data" class="card p-3 mb-4" id="uploadForm">
+  {% csrf_token %}
+  <input type="file" name="file" accept="application/pdf" class="form-control mb-3" required>
+  <button class="btn btn-primary" type="submit" id="uploadBtn">
+    <span id="uploadBtnText">Upload</span>
+    <span id="uploadSpinner" class="d-none">
+      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+      Processing PDF...
+    </span>
+  </button>
+</form>
+{% endblock %}
+
+{% block processing_text %}Parsing PDF and extracting data{% endblock %}
+{% block empty_text %}No files uploaded yet{% endblock %}
+{% block clear_history_type %}documents{% endblock %}
+
+{% block page_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('uploadForm');
+
+    form.addEventListener('submit', function() {
+        setUploadButtonState('uploadBtn', true);
+    });
+});
+</script>
+{% endblock %}

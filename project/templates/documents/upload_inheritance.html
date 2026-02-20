@@ -1,0 +1,21 @@
+{% extends "documents/base_upload.html" %}
+{% load static %}
+
+{% block extra_js %}
+<script src="{% static 'js/universal_upload.js' %}"></script>
+<script>
+// Конфігурація для PDF завантаження
+window.uploadConfig = {
+    uploadType: 'pdf',
+    acceptedMimeTypes: ['application/pdf'],
+    mobileOptimized: false,
+    showCameraButton: false,
+    maxFileSizeMb: 10,
+    uploadUrl: '{% url "documents:upload" %}'
+};
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/universal_upload.css' %}">
+{% endblock %}

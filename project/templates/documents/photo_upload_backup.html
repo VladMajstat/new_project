@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+{% block title %}Photo Upload{% endblock %}
+
+{% block content %}
+  <div class="container py-4">
+    <h3 class="mb-3">Photo Upload</h3>
+
+    <!-- Photo capture buttons (mobile only) -->
+    <div class="card p-3 mb-4" id="photoCaptureCard">
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 1.5rem;
+        box-sizing: border-box;
+    }
+    
+    /* Mobile devices */
+    @media (max-width: 768px) {
+        .photo-container {
+            padding: 1rem 0.75rem;
+            margin: 0;
+            width: 100%;
+        }
+        
+        .photo-container h1 {
+            font-size: 1.5rem;
+            margin: 0.5rem 0;
+            padding: 0 0.5rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .photo-container p {
+            font-size: 0.95rem;
+            margin: 0.5rem 0 1rem 0;
+            padding: 0 0.5rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.4;
+        }
+    }
+    
+    /* Tablet devices */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .photo-container {
+            padding: 1.5rem 1rem;
+        }
+    }
+    
+    /* Desktop */
+    @media (min-width: 1025px) {
+        .photo-container {
+            padding: 2rem;
+        }
+    }
+    
+    .photo-trigger {
+        width: 100%;
+        padding: 1.5rem;
+        font-size: 1.2rem;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-bottom: 1rem;
+        box-sizing: border-box;
+    }
+    
+    /* Mobile button adjustments */
+    @media (max-width: 768px) {
+        .photo-trigger {
+            padding: 1.2rem 1rem;
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+        }
+    }
+    
+    .photo-trigger:hover {
+        background: #0056b3;
+    }
+    
+    .gallery-btn {
+        background: #28a745;
+    }
+    
+    .gallery-btn:hover {
+        background: #218838;
+    }
+    
+    .photo-input {
+        display: none !important;
+        position: absolute;
+        width: 0;
+        height: 0;
+        opacity: 0;
+        visibility: hidden;
+    }
+    
+    .photo-input-desktop {
+        display: none;
+    }
+    
+    .file-input-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .file-input-button {
+        width: 100%;
+        padding: 1.5rem;
+        font-size: 1.2rem;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        text-align: center;
+    }
+    
+    .file-input-button:hover {
+        background: #0056b3;
+    }
+    
+    #file-name {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+    }
+    
+    .btn-primary, .btn-secondary {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin: 0.25rem;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+    
+    .btn-primary {
+        background: #007bff;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #0056b3;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #545b62;
+    }
+    
+    #actionButtons {
+        text-align: center;
+    }
+    
+    .preview-container {
+        margin-top: 1rem;
+        text-align: center;
+    }
+    
+    .preview-image {
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .upload-progress {
+        display: none;
+        margin-top: 1rem;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 30px;
+        background: #f0f0f0;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: #28a745;
+        transition: width 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+    
+    .error-message {
+        color: #dc3545;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f8d7da;
+        border-radius: 4px;
+    }
+    
+    .success-message {
+        color: #155724;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #d4edda;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="photo-container">
+    <h1>📱 Photo Upload</h1>
+    <p>Take a photo of your document using your mobile camera</p>
+    
+    <!-- Mobile: Show camera and gallery buttons -->
+    <div id="mobileInterface" style="display: none;">
+        <button type="button" class="photo-trigger" id="photoTrigger">
+            📷 Take Photo
+        </button>
+        <button type="button" class="photo-trigger gallery-btn" id="galleryTrigger">
+            🖼️ Choose from Gallery
+        </button>
+    </div>
+    
+    <!-- Desktop: Show standard file input -->
+    <div id="desktopInterface" style="display: none;">
+        <form method="post" enctype="multipart/form-data" id="photoForm">
+            {% csrf_token %}
+            <div class="file-input-wrapper">
+                <input type="file" id="photo-input" name="image" accept="image/*" class="photo-input-desktop">
+                <button type="button" class="file-input-button">
+                    📁 Choose Photo File
+                </button>
+                <span id="file-name">No file selected</span>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Hidden inputs for mobile -->
+    <form method="post" enctype="multipart/form-data" id="mobileForm" style="display: none;">
+        {% csrf_token %}
+        <!-- Input for camera (with capture attribute) -->
+        <input type="file" id="photo-input-camera" name="image" accept="image/*" capture="environment" class="photo-input">
+        <!-- Input for gallery (without capture attribute) -->
+        <input type="file" id="photo-input-gallery" name="image" accept="image/*" class="photo-input">
+    </form>
+    
+    <!-- Action buttons after upload -->
+    <div id="actionButtons" style="display: none; margin-top: 1rem;">
+        <button type="button" class="btn-secondary" id="addMoreBtn">
+            ➕ Add More Photos
+        </button>
+        <button type="button" class="btn-primary" id="viewGalleryBtn">
+            🖼️ View All Photos
+        </button>
+    </div>
+    
+    <div class="preview-container" id="previewContainer" style="display: none;">
+        <h3>Preview:</h3>
+        <img id="previewImage" class="preview-image" src="" alt="Preview">
+    </div>
+    
+    <div class="upload-progress" id="uploadProgress">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+    </div>
+    
+    <div id="messageContainer"></div>
+    
+    <!-- Recent uploads section (same as PDF page) -->
+    <div class="recent-uploads" style="margin-top: 2rem;">
+        <h5>Recent uploads</h5>
+        <div class="uploads-list">
+            {% if uploads %}
+                {% for upload in uploads %}
+                <div class="upload-item" style="padding: 0.75rem; margin-bottom: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{{ upload.original_name }}</strong>
+                            <br>
+                            <small style="color: #666;">{{ upload.created_at|date:"M d, Y H:i" }}</small>
+                        </div>
+                        <div>
+                            {% if upload.processing_status == 'pending_review' %}
+                                <a href="{% url 'documents:review' upload.pk %}" class="btn btn-sm btn-primary">Review</a>
+                            {% elif upload.processing_status == 'error' %}
+                                <span class="badge bg-danger">Error</span>
+                            {% elif upload.processing_status == 'processing' %}
+                                <span class="badge bg-warning">Processing...</span>
+                            {% else %}
+                                <span class="badge bg-success">Done</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: #666; text-align: center; padding: 2rem;">No photos uploaded yet</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Device detection - simplified and more reliable
+    const isMobile = /Mobi|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && window.innerWidth <= 768;
+    const isTablet = /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent) || (/Mobi|Android/i.test(navigator.userAgent) && window.innerWidth > 768 && window.innerWidth <= 1024);
+    const isDesktop = !isMobile && !isTablet;
+    
+    // Elements
+    const mobileInterface = document.getElementById('mobileInterface');
+    const desktopInterface = document.getElementById('desktopInterface');
+    const photoTrigger = document.getElementById('photoTrigger');
+    const galleryTrigger = document.getElementById('galleryTrigger');
+    const photoInputDesktop = document.getElementById('photo-input');
+    const photoInputCamera = document.getElementById('photo-input-camera');
+    const photoInputGallery = document.getElementById('photo-input-gallery');
+    const photoForm = document.getElementById('photoForm');
+    const mobileForm = document.getElementById('mobileForm');
+    const fileInputButton = document.querySelector('.file-input-button');
+    const fileInputDesktop = document.querySelector('.photo-input-desktop');
+    const fileName = document.getElementById('file-name');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('previewImage');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressFill');
+    const messageContainer = document.getElementById('messageContainer');
+    const actionButtons = document.getElementById('actionButtons');
+    const addMoreBtn = document.getElementById('addMoreBtn');
+    const viewGalleryBtn = document.getElementById('viewGalleryBtn');
+    
+    // Show appropriate interface based on device
+    if (isMobile || isTablet) {
+        mobileInterface.style.display = 'block';
+        document.querySelector('p').textContent = 'Take a photo of your document using your mobile camera';
+    } else {
+        desktopInterface.style.display = 'block';
+        document.querySelector('p').textContent = 'Upload a photo of your document from your computer';
+    }
+    
+    // Mobile: Camera button handler (opens camera directly)
+    photoTrigger.addEventListener('click', function() {
+        photoInputCamera.click();
+    });
+    
+    // Mobile: Gallery button handler (opens file picker)
+    galleryTrigger.addEventListener('click', function() {
+        photoInputGallery.click();
+    });
+    
+    // Desktop: File button handler
+    fileInputButton.addEventListener('click', function() {
+        photoInputDesktop.click();
+    });
+    
+    // Mobile: Camera input handler
+    photoInputCamera.addEventListener('change', function(e) {
+        handleFileSelection(e.target.files[0], mobileForm);
+    });
+    
+    // Mobile: Gallery input handler
+    photoInputGallery.addEventListener('change', function(e) {
+        handleFileSelection(e.target.files[0], mobileForm);
+    });
+    
+    // Desktop: File selection handler
+    photoInputDesktop.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            fileName.textContent = file.name;
+            handleFileSelection(file, photoForm);
+        }
+    });
+    
+    // Add more photos button
+    addMoreBtn.addEventListener('click', function() {
+        // Reset form for next upload
+        previewContainer.style.display = 'none';
+        actionButtons.style.display = 'none';
+        uploadProgress.style.display = 'none';
+        messageContainer.innerHTML = '';
+        fileName.textContent = 'No file selected';
+        
+        // Clear file inputs
+        photoInputMobile.value = '';
+        photoInputDesktop.value = '';
+    });
+    
+    // View gallery button
+    viewGalleryBtn.addEventListener('click', function() {
+        window.location.href = '/documents/gallery/';
+    });
+    
+    function handleFileSelection(file, form) {
+        if (!file) return;
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            previewImage.src = event.target.result;
+            previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+        
+        // Auto-upload
+        uploadPhoto(file, form);
+    }
+    
+    function uploadPhoto(file, form) {
+        const formData = new FormData(form);
+        
+        // Show progress
+        uploadProgress.style.display = 'block';
+        messageContainer.innerHTML = '';
+        
+        // Create XMLHttpRequest for progress tracking
+        const xhr = new XMLHttpRequest();
+        
+        // Track upload progress
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = Math.round((e.loaded / e.total) * 100);
+                progressFill.style.width = percentComplete + '%';
+                progressFill.textContent = percentComplete + '%';
+            }
+        });
+        
+        // Handle completion
+        xhr.addEventListener('load', function() {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    messageContainer.innerHTML = '<div class="success-message">✅ Photo uploaded successfully! Redirecting to review...</div>';
+                    // Redirect to review page (same as PDF upload)
+                    setTimeout(function() {
+                        window.location.href = response.redirect_url;
+                    }, 1000);
+                } else {
+                    showError('Upload failed: ' + (response.error || JSON.stringify(response.errors)));
+                }
+            } else {
+                showError('Upload failed with status: ' + xhr.status);
+            }
+            uploadProgress.style.display = 'none';
+        });
+        
+        // Handle errors
+        xhr.addEventListener('error', function() {
+            showError('Network error occurred');
+            uploadProgress.style.display = 'none';
+        });
+        
+        // Send request
+        xhr.open('POST', window.location.href, true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.send(formData);
+    }
+    
+    function showError(message) {
+        messageContainer.innerHTML = '<div class="error-message">❌ ' + message + '</div>';
+    }
+});
+</script>
+{% endblock %}

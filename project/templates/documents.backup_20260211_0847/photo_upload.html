@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="container py-4">
+    <h3 class="mb-3">Photo Upload</h3>
+
+    <!-- Photo capture form (replaces file input for mobile) -->
+    <div class="card p-3 mb-4" id="photoForm">
+      <div class="d-flex gap-2 mb-3">
+        <button type="button" class="btn btn-primary flex-fill" onclick="openCamera()">
+          <i class="ph-camera me-1"></i>Take Photo
+        </button>
+        <button type="button" class="btn btn-success flex-fill" onclick="openGallery()">
+          <i class="ph-image me-1"></i>Choose from Gallery
+        </button>
+      </div>
+      
+      <!-- Hidden file inputs -->
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" class="d-none" onchange="handleImageUpload(this.files[0], 'camera')">
+      <input type="file" id="galleryInput" accept="image/*" class="d-none" onchange="handleImageUpload(this.files[0], 'gallery')">
+      
+      <!-- Preview -->
+      <div id="photoPreview" class="d-none mb-3">
+        <img id="previewImage" class="img-fluid rounded" style="max-height: 200px;">
+      </div>
+      
+      <!-- Upload button -->
+      <button class="btn btn-primary d-none" type="button" id="uploadBtn">
+        <span id="uploadBtnText">Upload Photo</span>
+        <span id="uploadSpinner" class="d-none">
+          <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Processing Photo...
+        </span>
+      </button>
+    </div>
+
+    <div id="processingAlert" class="alert alert-info d-none mb-4">
+      <div class="d-flex align-items-center">
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        <span><strong>Processing:</strong> Parsing photo and extracting data. Please wait...</span>
+      </div>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <h5 class="mb-0">Recent uploads</h5>
+      <div class="d-flex align-items-center gap-3">
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="toggleHistory" checked>
+          <label class="form-check-label small" for="toggleHistory">Show history</label>
+        </div>
+        <button type="button" class="btn btn-outline-danger btn-sm" id="clearHistoryBtn" 
+                data-bs-toggle="modal" data-bs-target="#clearHistoryModal">
+          Clear history
+        </button>
+      </div>
+    </div>
+    <div class="card p-3" id="historyCard">
+      <ul class="mb-0" id="historyList">
+        {% for u in uploads %}
+          <li class="mb-2">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <strong>{{ u.created_at|date:"Y-m-d H:i" }}</strong> —
+                {{ u.original_name }}
+              </div>
+              <div>
+                {% if u.processing_status == "pending_review" %}
+                  <span class="badge bg-warning text-dark me-2">Pending Review</span>
+                  <a href="{% url 'documents:review' pk=u.pk %}" class="btn btn-warning btn-sm">
+                    <i class="ph-pencil me-1"></i>Review & Confirm
+                  </a>
+                {% elif u.processing_status == "done" %}
+                  <button type="button" class="btn btn-success btn-sm me-1" title="Sent to Dispolive" 
+                          data-bs-toggle="modal" data-bs-target="#logModal" 
+                          data-log-status="success" data-log-id="{{ u.pk }}" data-log-name="{{ u.original_name }}">
+                    <i class="ph-check-circle"></i>
+                  </button>
+                  <a href="{% url 'documents:review' pk=u.pk %}" class="btn btn-outline-secondary btn-sm" title="View Data">
+                    <i class="ph-eye"></i>
+                  </a>
+                {% elif u.processing_status == "processing" %}
+                  <span class="badge bg-info">Processing...</span>
+                {% elif u.processing_status == "error" %}
+                  <button type="button" class="btn btn-danger btn-sm" title="Error" 
+                          data-bs-toggle="modal" data-bs-target="#logModal" 
+                          data-log-status="error" data-log-id="{{ u.pk }}" data-log-name="{{ u.original_name }}" data-log-error="{{ u.processing_error }}">
+                    <i class="ph-x-circle"></i>
+                  </button>
+                {% else %}
+                  <span class="badge bg-secondary">{{ u.processing_status }}</span>
+                {% endif %}
+              </div>
+            </div>
+            {% if u.processing_status == "error" and u.processing_error %}
+              <div class="text-danger small mt-1">
+                <i class="ph-warning me-1"></i>{{ u.processing_error }}
+              </div>
+            {% endif %}
+          </li>
+        {% empty %}
+          <li>No photos uploaded yet</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+    <!-- Log Status Modal -->
+    <div class="modal fade" id="logModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header" id="logModalHeader">
+            <h5 class="modal-title" id="logModalTitle">Status Log</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <pre id="logModalBody" class="bg-light p-3 rounded small mb-0" style="white-space: pre-wrap;"></pre>
+          </div>
+          <div class="modal-footer">
+            <a href="{% url 'documents:dispolive_log' %}" target="_blank" class="btn btn-outline-secondary btn-sm">
+              <i class="ph-file-text me-1"></i>Open full log file
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clear History Modal -->
+    <div class="modal fade" id="clearHistoryModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Clear Upload History</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete all uploaded photos? This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <form method="post" action="{% url 'documents:clear_history' %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger">Clear All</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+{% endblock %}
+
+{% block import_js %}
+<script>
+// Функції для роботи з камерою та галереєю
+function openCamera() {
+    console.log('Opening camera...');
+    const cameraInput = document.getElementById('cameraInput');
+    
+    // Перевіряємо підтримку capture атрибута
+    if (cameraInput.capture === undefined) {
+        console.log('Camera capture not supported, falling back to file selection');
+        // Якщо capture не підтримується, використовуємо стандартний вибір
+        cameraInput.removeAttribute('capture');
+    } else {
+        // Встановлюємо capture атрибут для камери
+        cameraInput.setAttribute('capture', 'environment');
+        console.log('Camera capture attribute set to:', cameraInput.getAttribute('capture'));
+    }
+    
+    cameraInput.click();
+}
+
+function openGallery() {
+    console.log('Opening gallery...');
+    document.getElementById('galleryInput').click();
+}
+
+function handleImageUpload(file, source) {
+    if (!file) {
+        console.log('No file selected');
+        return;
+    }
+    
+    console.log(`Uploading ${source} image:`, file.name, file.type, file.size);
+    
+    // Показуємо превью
+    const photoPreview = document.getElementById('photoPreview');
+    const previewImage = document.getElementById('previewImage');
+    const uploadBtn = document.getElementById('uploadBtn');
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        previewImage.src = event.target.result;
+        photoPreview.classList.remove('d-none');
+        uploadBtn.classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
+    
+    // Зберігаємо файл для завантаження
+    window.selectedFile = file;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadBtnText = document.getElementById('uploadBtnText');
+    const uploadSpinner = document.getElementById('uploadSpinner');
+    const processingAlert = document.getElementById('processingAlert');
+
+    // Upload photo
+    uploadBtn.addEventListener('click', function() {
+        if (!window.selectedFile) return;
+
+        uploadBtnText.classList.add('d-none');
+        uploadSpinner.classList.remove('d-none');
+        uploadBtn.disabled = true;
+        processingAlert.classList.remove('d-none');
+
+        // Create FormData
+        const formData = new FormData();
+        formData.append('image', window.selectedFile);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        // Upload via AJAX
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                // Зупиняємо лоадер при помилці
+                uploadBtnText.classList.remove('d-none');
+                uploadSpinner.classList.add('d-none');
+                uploadBtn.disabled = false;
+                processingAlert.classList.add('d-none');
+                
+                // Показуємо помилку
+                const errorMsg = data.error || JSON.stringify(data.errors || 'Unknown error');
+                alert('Upload failed: ' + errorMsg);
+                console.error('Upload error:', data);
+            }
+        })
+        .catch(error => {
+            // Зупиняємо лоадер при мережевій помилці
+            uploadBtnText.classList.remove('d-none');
+            uploadSpinner.classList.add('d-none');
+            uploadBtn.disabled = false;
+            processingAlert.classList.add('d-none');
+            
+            alert('Network error: ' + error);
+            console.error('Network error:', error);
+        });
+    });
+
+    // Toggle history visibility
+    const toggleHistory = document.getElementById('toggleHistory');
+    const historyCard = document.getElementById('historyCard');
+    const storageKey = 'showPhotoHistory';
+
+    // Restore saved state
+    const savedState = localStorage.getItem(storageKey);
+    if (savedState === 'false') {
+        toggleHistory.checked = false;
+        historyCard.classList.add('d-none');
+    }
+
+    toggleHistory.addEventListener('change', function() {
+        if (this.checked) {
+            historyCard.classList.remove('d-none');
+            localStorage.setItem(storageKey, 'true');
+        } else {
+            historyCard.classList.add('d-none');
+            localStorage.setItem(storageKey, 'false');
+        }
+    });
+
+    // Log modal handler
+    const logModal = document.getElementById('logModal');
+    if (logModal) {
+        logModal.addEventListener('show.bs.modal', function(event) {
+            const btn = event.relatedTarget;
+            const status = btn.getAttribute('data-log-status');
+            const id = btn.getAttribute('data-log-id');
+            const name = btn.getAttribute('data-log-name');
+            const error = btn.getAttribute('data-log-error') || '';
+            
+            const header = document.getElementById('logModalHeader');
+            const title = document.getElementById('logModalTitle');
+            const body = document.getElementById('logModalBody');
+            
+            const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            
+            if (status === 'success') {
+                header.className = 'modal-header bg-success text-white';
+                title.textContent = '✓ Dispolive: Успішно';
+                body.textContent = `${now} INFO [documents.dispolive]\nDispolive SUCCESS | upload_id=${id}\nFile: ${name}`;
+            } else {
+                header.className = 'modal-header bg-danger text-white';
+                title.textContent = '✗ Dispolive: Помилка';
+                body.textContent = `${now} ERROR [documents.dispolive]\nDispolive FAILED | upload_id=${id}\nFile: ${name}\nError: ${error}`;
+            }
+        });
+    }
+    
+    // Логування для відладки
+    console.log('Photo Upload page loaded');
+    console.log('Camera input capture attribute:', document.getElementById('cameraInput').capture);
+    console.log('User agent:', navigator.userAgent);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "main_app/base.html" %}
+{% load static %}
+
+{% block title %}
+    Logout
+{% endblock title %}
+
+{% block page_header_title %}
+    Logout
+{% endblock page_header_title %}
+
+
+{% block content_area %}
+
+    <!-- Card titles and subtitles -->
+    <div class="row">
+        <div class="col-lg-12">
+
+            <div class="card">
+
+                <div class="card-header">
+                    <h2 class="mb-0">{{ request.user }}</h2>
+                </div>
+                
+                <div class="card-body">
+
+                    <span>Are you sure that you want logout?</span>
+
+                    <form method="post" action="{% url 'account_logout' %}" class="mt-2">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger">Logout</button>
+                    </form>
+                    
+                </div>
+
+            </div>
+            
+        </div>
+    </div>
+    <!-- /card titles and subtitles -->
+
+{% endblock content_area %}

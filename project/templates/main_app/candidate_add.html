@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Add Candidate{% endblock title %}
+
+{% block content_area %}
+    <div class="tab-content" id="adminTabsContent">
+        <div class="card rounded-0">
+            <div class="card-body">
+
+                {% if messages %}
+                  <div class="container mt-3">
+                    {% for message in messages %}
+                      <div class="alert
+                           {% if message.tags == 'error' %}alert-danger
+                           {% elif message.tags == 'success' %}alert-success
+                           {% elif message.tags == 'warning' %}alert-warning
+                           {% else %}alert-info{% endif %}
+                           alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+
+                <h4 class="mb-4">Create New Candidate</h4>
+
+                <form method="post" action="{% url 'candidate_add' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label"><b>Full Name:</b></label>
+                            <input type="text" name="full_name" class="form-control rounded-0" placeholder="Enter full name" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Email:</b></label>
+                            <input type="email" name="email" class="form-control rounded-0">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Phone:</b></label>
+                            <input type="text" name="phone" class="form-control rounded-0" placeholder="066 123 45 67">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Source:</b></label>
+                            <select name="source" class="form-select rounded-0">
+                                <option value="Response" selected>Response</option>
+                                <option value="Contacts">Contacts</option>
+                                <option value="Applied">Applied</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Status:</b></label>
+                            <select name="status" class="form-select rounded-0">
+                                <option value="New" selected>New</option>
+                                <option value="Telegram">Telegram</option>
+                                <option value="Test">Test</option>
+                                <option value="Trainee">Trainee</option>
+                                <option value="Working">Working</option>
+                                <option value="No Answer" >No Answer</option>
+                                <option value="Refuse">Refuse</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Department:</b></label>
+                            <select name="department" class="form-select rounded-0">
+                                <option value="" selected>---------</option>
+                                {% for dept in departments %}
+                                    {% if dept.slug == selected_department %}
+                                        <option value="{{ dept.id }}" selected>{{ dept.name }}</option>
+                                    {% else %}
+                                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>City:</b></label>
+                            <input type="text" name="city" class="form-control rounded-0" placeholder="e.g. New York">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Birth Date:</b></label>
+                            <input type="date" name="birth_date" class="form-control rounded-0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Profile Photo:</b></label>
+                            <input type="file" name="photo" class="form-control rounded-0" accept="image/*">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Resume Link:</b></label>
+                            <input type="url" name="resume_link" class="form-control rounded-0" placeholder="Google Drive / LinkedIn link">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><b>Telegram Link:</b></label>
+                            <input type="url" name="telegram_link" class="form-control rounded-0" placeholder="https://t.me/username">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label"><b>Cover Letter / Notes:</b></label>
+                            <textarea name="cover" class="form-control rounded-0" rows="5" placeholder="Paste cover letter or notes here..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="text-end mt-3">
+                        <button type="submit" class="btn btn-primary rounded-0 px-4">
+                            <i class="ph-paper-plane-tilt me-2"></i>  Create Candidate
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content_area %}

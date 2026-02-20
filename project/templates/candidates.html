@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}List of Candidates{% endblock title %}
+{% block content_area %}
+<div class="card card w-100 flex-grow-1">
+    <div class="card-body">
+        {% include "main_app/candidates_list.html" %}
+    </div>
+</div>
+{% endblock %}

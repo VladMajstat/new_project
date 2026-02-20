@@ -1,0 +1,609 @@
+{% extends "base.html" %}
+{% load static widget_tweaks %}
+
+{% block title %}Review Parsed Data
+
+
+
+<script>
+(function () {
+  function byId(id) { return document.getElementById(id); }
+  function forceUncheck(el) {
+    if (!el) return;
+    el.checked = false;
+    el.removeAttribute('checked');
+  }
+  function syncTransportPositions() {
+    var taxi = byId('id_taxi_mietwagen');
+    var ktw = byId('id_ktw_medizinisch');
+    var rollstuhl = byId('id_rollstuhl');
+    var tragestuhl = byId('id_tragestuhl');
+    var liegend = byId('id_liegend');
+    if (!taxi || !ktw || !rollstuhl || !tragestuhl || !liegend) return;
+
+    if (taxi.checked) {
+      forceUncheck(ktw);
+      forceUncheck(rollstuhl);
+      forceUncheck(tragestuhl);
+      forceUncheck(liegend);
+      return;
+    }
+    if (!ktw.checked) {
+      forceUncheck(rollstuhl);
+      forceUncheck(tragestuhl);
+      forceUncheck(liegend);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    console.log('transport-sync-loaded');
+    syncTransportPositions();
+    setTimeout(syncTransportPositions, 0);
+    setTimeout(syncTransportPositions, 100);
+    var taxi = byId('id_taxi_mietwagen');
+    var ktw = byId('id_ktw_medizinisch');
+    if (taxi) taxi.addEventListener('change', syncTransportPositions);
+    if (ktw) ktw.addEventListener('change', syncTransportPositions);
+  });
+})();
+</script>
+
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'documents/review.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container review-container py-4">
+    <div class="d-flex justify-content-between align-items-center review-header">
+        <h3>Review Parsed Data</h3>
+        <a href="{% url 'documents:upload' %}" class="btn btn-secondary">
+            <i class="ph-arrow-left me-1"></i> Back to Uploads
+        </a>
+    </div>
+    
+    {% if error_message %}
+    <div class="alert alert-danger mb-4">
+        <i class="ph-warning me-2"></i>
+        <strong>Error:</strong> {{ error_message }}
+    </div>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger mb-4">
+        {% for error in form.non_field_errors %}
+        <div>{{ error }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="alert alert-info mb-4">
+        <i class="ph-info me-2"></i>
+        <strong>{{ upload.original_name }}</strong> — Review and fine-tune the extracted data before sending to Dispolive.
+    </div>
+
+    <form method="post" id="reviewForm">
+        {% csrf_token %}
+        
+        <!-- Display Settings -->
+        <div class="card block-card mb-3">
+            <div class="card-header bg-secondary text-white">
+                <i class="ph-sliders me-2"></i>Display settings
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="toggleEmptyFields">
+                            <label class="form-check-label" for="toggleEmptyFields">Hide empty fields</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="togglePayloadBlock" checked>
+                            <label class="form-check-label" for="togglePayloadBlock">Show Dispolive payload</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="toggleFilledJsonOnly">
+                            <label class="form-check-label" for="toggleFilledJsonOnly">JSON: show populated only</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient -->
+        <div class="card block-card">
+            <div class="card-header">Patient</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.patient_surname.label }} *</label>
+                        {{ form.patient_surname }}
+                        {% if form.patient_surname.errors %}<div class="field-error">{{ form.patient_surname.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.patient_name.label }} *</label>
+                        {{ form.patient_name }}
+                        {% if form.patient_name.errors %}<div class="field-error">{{ form.patient_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">{{ form.patient_street.label }}</label>
+                        {{ form.patient_street }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.patient_zip.label }}</label>
+                        {{ form.patient_zip }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.patient_city.label }}</label>
+                        {{ form.patient_city }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ form.patient_country.label }}</label>
+                        {{ form.patient_country }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">{{ form.patient_birthday.label }}</label>
+                        {{ form.patient_birthday }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.patient_telephone.label }}</label>
+                        {{ form.patient_telephone }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insurance -->
+        <div class="card block-card">
+            <div class="card-header">Insurance</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.krankenkasse.label }}</label>
+                        {{ form.krankenkasse }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.insurance_status.label }}</label>
+                        {{ form.insurance_status }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.kostentraegerkennung.label }}</label>
+                        {{ form.kostentraegerkennung }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.versichertennr.label }}</label>
+                        {{ form.versichertennr }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doctor IDs -->
+        <div class="card block-card">
+            <div class="card-header">Doctor identifiers</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.betriebsstaetten_nr.label }}</label>
+                        {{ form.betriebsstaetten_nr }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.arzt_nr.label }}</label>
+                        {{ form.arzt_nr }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.datum.label }}</label>
+                        {{ form.datum }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reasons -->
+        <div class="card block-card">
+            <div class="card-header">Reasons</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.unfall }}
+                            <label class="form-check-label">{{ form.unfall.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.arbeitsunfall }}
+                            <label class="form-check-label">{{ form.arbeitsunfall.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.versorgungsleiden }}
+                            <label class="form-check-label">{{ form.versorgungsleiden.label }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction -->
+        <div class="card block-card">
+            <div class="card-header">Trip direction</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            {{ form.hinfahrt }}
+                            <label class="form-check-label">{{ form.hinfahrt.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            {{ form.rueckfahrt }}
+                            <label class="form-check-label">{{ form.rueckfahrt.label }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Treatment Type -->
+        <div class="card block-card">
+            <div class="card-header">Treatment type</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="form-check">
+                            {{ form.voll_teilstationaer }}
+                            <label class="form-check-label">{{ form.voll_teilstationaer.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="form-check">
+                            {{ form.vor_nachstationaer }}
+                            <label class="form-check-label">{{ form.vor_nachstationaer.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="form-check">
+                            {{ form.ambulant_merkmale }}
+                            <label class="form-check-label">{{ form.ambulant_merkmale.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="form-check">
+                            {{ form.anderer_grund }}
+                            <label class="form-check-label">{{ form.anderer_grund.label }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mandatory Trips -->
+        <div class="card block-card">
+            <div class="card-header">Mandatory trips</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.hochfrequent }}
+                            <label class="form-check-label">{{ form.hochfrequent.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.ausnahmefall }}
+                            <label class="form-check-label">{{ form.ausnahmefall.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.dauerhafte_mobilitaet }}
+                            <label class="form-check-label">{{ form.dauerhafte_mobilitaet.label }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KTW Reason -->
+        <div class="card block-card">
+            <div class="card-header">KTW reason</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.anderer_grund_ktw }}
+                            <label class="form-check-label">{{ form.anderer_grund_ktw.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">{{ form.reason_description.label }}</label>
+                        {{ form.reason_description }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule -->
+        <div class="card block-card">
+            <div class="card-header">Schedule</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.vom_am.label }}</label>
+                        {{ form.vom_am }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.x_pro_woche.label }}</label>
+                        {{ form.x_pro_woche }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.bis_voraussichtlich.label }}</label>
+                        {{ form.bis_voraussichtlich }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clinic -->
+        <div class="card block-card">
+            <div class="card-header">Destination clinic</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.clinic_name.label }}</label>
+                        {{ form.clinic_name }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.clinic_street.label }}</label>
+                        {{ form.clinic_street }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.clinic_zip.label }}</label>
+                        {{ form.clinic_zip }}
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">{{ form.clinic_city.label }}</label>
+                        {{ form.clinic_city }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transport Type -->
+        <div class="card block-card">
+            <div class="card-header">Transport type</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.taxi_mietwagen }}
+                            <label class="form-check-label">{{ form.taxi_mietwagen.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.ktw_medizinisch }}
+                            <label class="form-check-label">{{ form.ktw_medizinisch.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.vitalzeichenkontrolle }}
+                            <label class="form-check-label">{{ form.vitalzeichenkontrolle.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.rtw }}
+                            <label class="form-check-label">{{ form.rtw.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.naw_nef }}
+                            <label class="form-check-label">{{ form.naw_nef.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.andere_transport }}
+                            <label class="form-check-label">{{ form.andere_transport.label }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transport Mode -->
+        <div class="card block-card">
+            <div class="card-header">Transport position</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="rollstuhl" class="form-check-input" id="id_rollstuhl" {% if form.taxi_mietwagen.value %}{% else %}{% if form.ktw_medizinisch.value and form.rollstuhl.value %}checked{% endif %}{% endif %} data-transport-position="1">
+                            <label class="form-check-label">{{ form.rollstuhl.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="tragestuhl" class="form-check-input" id="id_tragestuhl" {% if form.taxi_mietwagen.value %}{% else %}{% if form.ktw_medizinisch.value and form.tragestuhl.value %}checked{% endif %}{% endif %} data-transport-position="1">
+                            <label class="form-check-label">{{ form.tragestuhl.label }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="liegend" class="form-check-input" id="id_liegend" {% if form.taxi_mietwagen.value %}{% else %}{% if form.ktw_medizinisch.value and form.liegend.value %}checked{% endif %}{% endif %} data-transport-position="1">
+                            <label class="form-check-label">{{ form.liegend.label }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doctor Contact -->
+        <div class="card block-card">
+            <div class="card-header">Ordering party</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.auftraggeber_name.label }}</label>
+                        {{ form.auftraggeber_name }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.auftraggeber_telefon.label }}</label>
+                        {{ form.auftraggeber_telefon }}
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">{{ form.auftraggeber_info.label }}</label>
+                        {{ form.auftraggeber_info }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.auftraggeber_zip.label }}</label>
+                        {{ form.auftraggeber_zip }}
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">{{ form.auftraggeber_city.label }}</label>
+                        {{ form.auftraggeber_city }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="card block-card">
+            <div class="card-header">Notes / justification</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">{{ form.begruendung_sonstiges.label }}</label>
+                        {{ form.begruendung_sonstiges }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit buttons -->
+        <div class="d-flex gap-3 review-actions">
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="ph-check me-2"></i>Confirm & Send to Dispolive
+            </button>
+            <a href="{% url 'documents:upload' %}" class="btn btn-outline-secondary btn-lg">
+                Cancel
+            </a>
+        </div>
+    </form>
+
+    {% if dispolive_payload %}
+    <!-- Dispolive Payload Display -->
+    <div class="card block-card mt-4" id="dispolivePayloadBlock">
+        <div class="card-header bg-primary text-white">
+            <i class="ph-database me-2"></i>Dispolive Payload (данные для API)
+        </div>
+        <div class="card-body">
+            <pre class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto; font-size: 0.85rem;"><code id="payloadJson">{{ dispolive_payload }}</code></pre>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const form = document.getElementById('reviewForm');
+    const payloadBlock = document.getElementById('dispolivePayloadBlock');
+    const payloadJson = document.getElementById('payloadJson');
+    
+    // Controls (unified naming: toggle*)
+    const toggles = {
+        emptyFields: document.getElementById('toggleEmptyFields'),
+        payloadBlock: document.getElementById('togglePayloadBlock'),
+        filledJsonOnly: document.getElementById('toggleFilledJsonOnly')
+    };
+    
+    // Store original JSON for filtering
+    let originalJson = null;
+    if (payloadJson) {
+        try {
+            originalJson = JSON.parse(payloadJson.textContent);
+        } catch(e) { console.warn('Failed to parse JSON'); }
+    }
+    
+    // === Handler Functions ===
+    
+    function handleEmptyFields() {
+        const hide = toggles.emptyFields?.checked;
+        if (!form) return;
+        
+        form.querySelectorAll('.mb-2, .mb-3').forEach(container => {
+            const input = container.querySelector('input[type="text"], textarea');
+            if (input) {
+                container.style.display = (hide && !input.value.trim()) ? 'none' : '';
+            }
+        });
+        
+        form.querySelectorAll('.block-card:not(#dispolivePayloadBlock)').forEach(card => {
+            const visible = card.querySelectorAll('.mb-2:not([style*="display: none"]), .mb-3:not([style*="display: none"])');
+            card.style.display = (hide && visible.length === 0) ? 'none' : '';
+        });
+    }
+    
+    function handlePayloadBlock() {
+        if (payloadBlock) {
+            payloadBlock.style.display = toggles.payloadBlock?.checked ? '' : 'none';
+        }
+    }
+    
+    function handleFilledJsonOnly() {
+        if (!payloadJson || !originalJson) return;
+        
+        if (toggles.filledJsonOnly?.checked) {
+            const filtered = Object.fromEntries(
+                Object.entries(originalJson).filter(([_, v]) => 
+                    v !== '' && v !== null && v !== false && 
+                    !(Array.isArray(v) && v.length === 0)
+                )
+            );
+            payloadJson.textContent = JSON.stringify(filtered, null, 2);
+        } else {
+            payloadJson.textContent = JSON.stringify(originalJson, null, 2);
+        }
+    }
+    
+    // === Initialize Controls ===
+    
+    function initToggle(key, handler, storageKey) {
+        const toggle = toggles[key];
+        if (!toggle) return;
+        
+        // Restore from localStorage, but respect default checked state
+        const saved = localStorage.getItem(storageKey);
+        if (saved !== null) {
+            toggle.checked = saved === 'true';
+        }
+        // If no saved state and toggle has checked attribute, keep it checked
+        
+        // Apply initial state
+        handler();
+        
+        // Listen for changes
+        toggle.addEventListener('change', () => {
+            localStorage.setItem(storageKey, toggle.checked);
+            handler();
+        });
+    }
+    
+    initToggle('emptyFields', handleEmptyFields, 'toggleEmptyFields');
+    initToggle('payloadBlock', handlePayloadBlock, 'togglePayloadBlock');
+    initToggle('filledJsonOnly', handleFilledJsonOnly, 'toggleFilledJsonOnly');
+});
+</script>
+{% endblock %}

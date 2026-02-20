@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Blogs{% endblock title %}
+{% block content_area %}
+
+<div class="card">
+    <div class="card-body">
+        {% include "main_app/blogs_list.html" %}
+    </div>
+</div>
+{% endblock %}

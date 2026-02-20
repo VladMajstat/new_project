@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Photo Gallery{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gallery-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+    
+    .gallery-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .document-section {
+        margin-bottom: 3rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1.5rem;
+        background: #f9f9f9;
+    }
+    
+    .document-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    
+    .photos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .photo-item {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        background: white;
+    }
+    
+    .photo-item img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .photo-item img:hover {
+        transform: scale(1.05);
+    }
+    
+    .photo-info {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+        color: #666;
+        text-align: center;
+    }
+    
+    .empty-gallery {
+        text-align: center;
+        padding: 3rem;
+        color: #666;
+    }
+    
+    .back-button {
+        display: inline-block;
+        margin-bottom: 2rem;
+        padding: 0.75rem 1.5rem;
+        background: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+    }
+    
+    .back-button:hover {
+        background: #0056b3;
+    }
+    
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.9);
+    }
+    
+    .modal-content {
+        margin: auto;
+        display: block;
+        max-width: 90%;
+        max-height: 90%;
+        margin-top: 5%;
+    }
+    
+    .close {
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .close:hover {
+        color: #bbb;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gallery-container">
+    <div class="gallery-header">
+        <h1>🖼️ Photo Gallery</h1>
+        <p>Total photos: {{ total_photos }}</p>
+    </div>
+    
+    <a href="{% url 'documents:photo_upload' %}" class="back-button">
+        ← Back to Upload
+    </a>
+    
+    {% if documents %}
+        {% for doc_data in documents %}
+        <div class="document-section">
+            <div class="document-title">
+                📄 {{ doc_data.document.original_name|default:"Untitled Document" }}
+                <small>({{ doc_data.photos|length }} photos)</small>
+            </div>
+            
+            <div class="photos-grid">
+                {% for photo in doc_data.photos %}
+                <div class="photo-item">
+                    <img src="{{ photo.image.url }}" 
+                         alt="{{ photo.original_name }}" 
+                         onclick="openModal(this)">
+                    <div class="photo-info">
+                        {{ photo.created_at|date:"M d, Y H:i" }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-gallery">
+            <h2>📷 No photos yet</h2>
+            <p>Start by uploading your first document photo!</p>
+            <a href="{% url 'documents:photo_upload' %}" class="back-button">
+                Upload First Photo
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal for full-size image view -->
+<div id="photoModal" class="modal">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <img class="modal-content" id="modalImage">
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(img) {
+    const modal = document.getElementById('photoModal');
+    const modalImg = document.getElementById('modalImage');
+    modal.style.display = 'block';
+    modalImg.src = img.src;
+}
+
+function closeModal() {
+    document.getElementById('photoModal').style.display = 'none';
+}
+
+// Close modal when clicking outside the image
+window.onclick = function(event) {
+    const modal = document.getElementById('photoModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

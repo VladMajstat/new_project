@@ -1,0 +1,467 @@
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    {% load static %}
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{% block title %}{% endblock title %}</title>
+
+    <link rel="icon" href="{% static 'task_manager/img/icons/favicon-icon.jpg' %}" type="image/x-icon">
+
+    <!-- Global stylesheets -->
+    <link href="{% static 'task_manager/css/inter/inter.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'task_manager/css/styles_min/styles.min.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'task_manager/css/all.min.css' %}" id="stylesheet" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- /global stylesheets -->
+
+    {% block head %}
+    {% endblock head %}
+</head>
+
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+        padding-right: calc(1.5em + 0.75rem);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+
+    .invalid-feedback {
+        display: none;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
+    }
+
+    .was-validated .is-invalid ~ .invalid-feedback,
+    .is-invalid ~ .invalid-feedback {
+        display: block;
+    }
+</style>
+
+<body>
+<!-- Main navbar -->
+<div class="navbar navbar-dark navbar-expand-lg navbar-static border-bottom border-1 border-white border-opacity-10">
+    <div class="container-fluid">
+        <div class="d-flex d-lg-none me-2">
+            <button type="button" class="navbar-toggler sidebar-mobile-main-toggle rounded-pill">
+                <i class="ph-list"></i>
+            </button>
+        </div>
+
+        <div class="navbar-brand flex-1 flex-lg-0">
+            <a href="" class="d-inline-flex align-items-center gap-2">
+                <h3 class="m-0" style="color: white;"><b>Picster</b></h3>
+            </a>
+        </div>
+
+        <ul class="nav flex-row">
+            <li class="nav-item d-lg-none">
+                <a href="#navbar_search" class="navbar-nav-link navbar-nav-link-icon rounded-pill"
+                   data-bs-toggle="collapse">
+                    <i class="ph-magnifying-glass"></i>
+                </a>
+            </li>
+        </ul>
+
+        <div class="navbar-collapse justify-content-center flex-lg-1 order-2 order-lg-1 collapse" id="navbar_search">
+            <div class="navbar-search flex-fill position-relative mt-2 mt-lg-0 mx-lg-3">
+                <div class="form-control-feedback form-control-feedback-start flex-grow-1" data-color-theme="dark">
+                    <input type="text" class="form-control bg-transparent rounded-pill" placeholder="Search"
+                           id="search_input">
+                    <div class="form-control-feedback-icon">
+                        <i class="ph-magnifying-glass"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if FEATURES.ACCOUNTS %}
+            <ul class="nav flex-row justify-content-end order-1 order-lg-2">
+                {% if request.user.is_authenticated %}
+                <div class="vr d-none d-sm-block flex-shrink-0 mx-2"></div>
+
+                <li class="nav-item nav-item-dropdown-lg dropdown ms-lg-2">
+                    <a href="#" class="navbar-nav-link align-items-center rounded-pill p-1" data-bs-toggle="dropdown">
+                        <div class="status-indicator-container">
+                            <img src="{% static 'task_manager/img/icons/favicon.jpg' %}" class="w-32px h-32px rounded-pill"
+                                 alt="">
+                            <span class="status-indicator bg-success"></span>
+                        </div>
+                        <span class="d-none d-lg-inline-block mx-lg-2">{{ request.user }}</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <a href="{% url 'account_logout' %}" class="dropdown-item">
+                            <i class="ph-sign-out me-2"></i>
+                            Logout
+                        </a>
+                    </div>
+                </li>
+
+                {% else %}
+                <li class="nav-item">
+                    <a href="{% url 'account_signup' %}" class="navbar-nav-link navbar-nav-link-icon rounded ms-1">
+                        <div class="d-flex align-items-center mx-md-1">
+                            <i class="ph-user-circle-plus"></i>
+                            <span class="d-none d-md-inline-block ms-2">Register</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'account_login' %}" class="navbar-nav-link navbar-nav-link-icon rounded ms-1">
+                        <div class="d-flex align-items-center mx-md-1">
+                            <i class="ph-user-circle"></i>
+                            <span class="d-none d-md-inline-block ms-2">Login</span>
+                        </div>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+        {% endif %}
+    </div>
+</div>
+<!-- /main navbar -->
+
+
+<!-- Page content -->
+<div class="page-content">
+
+
+    <!-- Main sidebar -->
+    <div class="sidebar sidebar-dark sidebar-main sidebar-expand-lg">
+
+        <!-- Sidebar content -->
+        <div class="sidebar-content">
+
+            <!-- Sidebar header -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-body d-flex justify-content-center">
+                    <h5 class="sidebar-resize-hide flex-grow-1 my-auto">Navigation</h5>
+
+                    <div>
+                        <button type="button"
+                                class="btn btn-flat-white btn-icon btn-sm rounded-pill border-transparent sidebar-control sidebar-main-resize d-none d-lg-inline-flex">
+                            <i class="ph-arrows-left-right"></i>
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-flat-white btn-icon btn-sm rounded-pill border-transparent sidebar-mobile-main-toggle d-lg-none">
+                            <i class="ph-x"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <ul class="nav nav-sidebar" data-nav-type="accordion">
+                    {% if FEATURES.DOCUMENTS %}
+                        <li class="nav-item">
+                            <a href="{% url 'documents:upload' %}" class="nav-link">
+                                <i class="ph-file-pdf"></i>
+                                <span>Documents</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+            <!-- /main navigation -->
+        </div>
+        <!-- /sidebar content -->
+    </div>
+    <!-- /main sidebar -->
+
+
+    <!-- Main content -->
+    <div class="content-wrapper flex-grow-1 overflow-hidden d-flex flex-column">
+
+        <!-- Inner content -->
+            <div class="content-inner w-100 d-flex flex-column flex-grow-1">
+
+                <div class="page-header page-header-light shadow">
+                    <div class="page-header-content d-lg-flex">
+                        <div class="d-flex">
+                            <h4 class="page-title mb-0">
+                                {% if request.breadcrumbs %}
+                                  {% with last_crumb=request.breadcrumbs|last %}
+                                      {{ last_crumb.title }}
+                                  {% endwith %}
+                              {% else %}
+                                  Dashboard
+                              {% endif %}
+                            </h4>
+                            <a href="#page_header" class="btn btn-light align-self-center collapsed d-lg-none border-transparent rounded-pill p-0 ms-auto" data-bs-toggle="collapse">
+                                <i class="ph-caret-down collapsible-indicator ph-sm m-1"></i>
+                            </a>
+                        </div>
+
+                        {% if request.resolver_match.url_name == 'hrs_list' %}
+                            <div class="collapse d-lg-block my-lg-auto ms-lg-auto" id="page_header">
+                                <a
+                                    href="{% url 'hr_add' %}" style="border-radius: 0;" class="btn btn-success btn-icon w-135px h-32px ms-2r align-items-center" >
+                                    Add HR
+                                    <i class="ms-2 ph-plus"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                        {% if request.resolver_match.url_name == 'candidates_list' or request.resolver_match.url_name == 'candidates_by_department' %}
+
+                            <div class="d-flex align-items-center ms-lg-auto gap-5 ">
+                                <a href="{% url 'candidate_add' %}?department={{department}}" style="border-radius: 0;" class="btn btn-success btn-icon w-135px  align-items-center">
+                                    Add
+                                    <i class="ph-plus ms-2"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="page-header-content d-lg-flex border-top">
+                        <div class="d-flex">
+                            <div class="breadcrumb py-2">
+                                <a href="{% url 'index' %}" class="breadcrumb-item"><i class="ph-house"></i></a>
+                                {% for crumb in request.breadcrumbs %}
+                                    {% if not forloop.first %}
+                                        {% if crumb.url %}
+                                            <a href="{{ crumb.url }}" class="breadcrumb-item">{{ crumb.title }}</a>
+                                        {% else %}
+                                            <span class="breadcrumb-item active">{{ crumb.title }}</span>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+
+                            <a href="#breadcrumb_elements" class="btn btn-light align-self-center collapsed d-lg-none border-transparent rounded-pill p-0 ms-auto" data-bs-toggle="collapse">
+                                <i class="ph-caret-down collapsible-indicator ph-sm m-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            <!-- /page header -->
+
+                <!-- Page header -->
+                <div class="page-header page-header-light shadow">
+                    <div class="page-header ms-4">
+                        <a href="#bc_color_light"
+                           class="d-flex align-items-center text-body d-md-none py-2 ms-auto"
+                           data-bs-toggle="collapse">
+                            <i class="ph-caret-circle-down"></i>
+                        </a>
+                    </div>
+                </div>
+
+            <!-- Content area -->
+            <div class="content w-100 d-flex flex-column flex-grow-1">
+
+                {% block content_area %}
+                {% endblock content_area %}
+                {% block content %}{% endblock content %}
+
+            </div>
+            <!-- /content area -->
+
+        </div>
+        <!-- /inner content -->
+
+    </div>
+    {% if request.resolver_match.url_name == 'blogs_list' %}
+        <div class="sidebar sidebar-component sidebar-expand-lg border   shadow-sm order-1 order-lg-2">
+
+                                <!-- Sidebar content -->
+            <div class="sidebar-content">
+
+                <!-- Header -->
+                <div class="sidebar-section sidebar-section-body d-flex align-items-center pb-2">
+                    <h5 class="mb-0">Categories</h5>
+                </div>
+                <!-- /header -->
+
+
+                <!-- Sidebar search -->
+                <div class="sidebar-section">
+                    <div class="d-flex flex-column-reverse bg-light border rounded p-2">
+                            {% for  category in categories %}
+                                <div class="bg-secondary text-white border-top border-white border-opacity-25 py-2 px-3">
+                                    <a href="{% url 'blogs_list' category=category.name %}">{{ category.name }}</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                </div>
+
+            </div>
+		</div>
+    {% endif %}
+    {% if request.resolver_match.url_name == 'candidates_list' or request.resolver_match.url_name == 'hrs_list' or  request.resolver_match.url_name == 'candidates_by_department' %}
+       <div class="sidebar sidebar-component sidebar-expand-lg border shadow-sm order-1 order-lg-2">
+            <div class="sidebar-content">
+
+                <div class="sidebar-section sidebar-section-body d-flex align-items-center pb-2">
+                    <h6 class="mb-0">Filters</h6>
+                </div>
+                <div class="sidebar-section p-3">
+                      <form method="get" class="vstack gap-3">
+
+                        <div>
+                          <label for="name" class="form-label">Name</label>
+                          <input id="name" type="text" name="name"
+                                 class="form-control" placeholder="Enter name"
+                                 value="{{ request.GET.name }}">
+                        </div>
+
+                        <div>
+                          <label for="email" class="form-label">Email</label>
+                          <input id="email" type="text" name="email"
+                                 class="form-control" placeholder="Email"
+                                 value="{{ request.GET.email }}">
+                        </div>
+
+                        <div>
+                          <label for="phone" class="form-label">Phone</label>
+                          <input id="phone" type="text" name="phone"
+                                 class="form-control" placeholder="Phone"
+                                 value="{{ request.GET.phone }}">
+                        </div>
+
+                        <div class="d-grid gap-2">
+                          <button type="submit" class="btn btn-primary">Apply</button>
+                          <a href="{% url 'candidates_list' %}" class="btn btn-secondary">Reset</a>
+                        </div>
+                      </form>
+                </div>
+
+            </div>
+        </div>
+    {% endif %}
+</div>
+<!-- /page content -->
+
+<!-- Footer -->
+<div class="navbar navbar-dark navbar-sm navbar-footer border-top border-1 border-white border-opacity-10">
+
+    <div class="container-fluid">
+        <span>&copy; 2024 </span>
+
+        <ul class="nav">
+            <li class="nav-item">
+                <a href="#" class="navbar-nav-link navbar-nav-link-icon rounded me-5">
+                    <div class="d-flex align-items-center mx-md-1">
+                        <i class="ph-lifebuoy"></i>
+                        <span class="d-none d-md-inline-block ms-2">Support</span>
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+</div>
+<!-- /footer -->
+
+<!-- Notifications -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="notifications">
+    <div class="offcanvas-header py-0">
+        <h5 class="offcanvas-title py-3">Actions</h5>
+        <button type="button" class="btn btn-light btn-sm btn-icon border-transparent rounded-pill"
+                data-bs-dismiss="offcanvas">
+            <i class="ph-x"></i>
+        </button>
+    </div>
+
+    <div class="offcanvas-body p-0">
+        <div class="p-3">
+            <div class="d-flex align-items-start mb-3">
+
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /notifications -->
+
+<!-- Demo config -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="demo_config">
+    <div class="position-absolute top-50 end-100 visible">
+        <button type="button" class="btn btn-primary btn-icon translate-middle-y rounded-end-0"
+                data-bs-toggle="offcanvas" data-bs-target="#demo_config">
+            <i class="ph-gear"></i>
+        </button>
+    </div>
+
+    <div class="offcanvas-header border-bottom py-0">
+        <h5 class="offcanvas-title py-3">Demo configuration</h5>
+        <button type="button" class="btn btn-light btn-sm btn-icon border-transparent rounded-pill"
+                data-bs-dismiss="offcanvas">
+            <i class="ph-x"></i>
+        </button>
+    </div>
+
+    <div class="offcanvas-body">
+        <div class="fw-semibold mb-2">Color mode</div>
+        <div class="list-group mb-3">
+            <label class="list-group-item list-group-item-action form-check border-width-1 rounded mb-2">
+                <div class="d-flex flex-fill my-1">
+                    <div class="form-check-label d-flex me-2">
+                        <i class="ph-sun ph-lg me-3"></i>
+                        <div>
+                            <span class="fw-bold">Light theme</span>
+                            <div class="fs-sm text-muted">Set light theme or reset to default</div>
+                        </div>
+                    </div>
+                    <input type="radio" class="form-check-input cursor-pointer ms-auto" name="main-theme" value="light"
+                           checked>
+                </div>
+            </label>
+
+            <label class="list-group-item list-group-item-action form-check border-width-1 rounded mb-2">
+                <div class="d-flex flex-fill my-1">
+                    <div class="form-check-label d-flex me-2">
+                        <i class="ph-moon ph-lg me-3"></i>
+                        <div>
+                            <span class="fw-bold">Dark theme</span>
+                            <div class="fs-sm text-muted">Switch to dark theme</div>
+                        </div>
+                    </div>
+                    <input type="radio" class="form-check-input cursor-pointer ms-auto" name="main-theme" value="dark">
+                </div>
+            </label>
+
+            <label class="list-group-item list-group-item-action form-check border-width-1 rounded mb-0">
+                <div class="d-flex flex-fill my-1">
+                    <div class="form-check-label d-flex me-2">
+                        <i class="ph-translate ph-lg me-3"></i>
+                        <div>
+                            <span class="fw-bold">Auto theme</span>
+                            <div class="fs-sm text-muted">Set theme based on system mode</div>
+                        </div>
+                    </div>
+                    <input type="radio" class="form-check-input cursor-pointer ms-auto" name="main-theme" value="auto">
+                </div>
+            </label>
+        </div>
+    </div>
+</div>
+<!-- /demo config -->
+
+<!-- Core JS files -->
+<script src="{% static 'task_manager/js/demo_configurator.js' %}"></script>
+<script src="{% static 'task_manager/js/bootstrap.bundle.min.js' %}"></script>
+<!-- /core JS files -->
+
+<!-- Theme JS files -->
+<script src="{% static 'task_manager/js/app.js' %}"></script>
+<!-- /theme JS files -->
+
+<script src="{% static 'task_manager/js/forms/imask.min.js' %}"></script>
+<script src="{% static 'task_manager/js/forms/form_controls_extended.js' %}"></script>
+<script src="{% static 'task_manager/js/index_js/jquery.min.js' %}"></script>
+<script src="{% static 'task_manager/js/dashboard/dashboard.js' %}"></script>
+
+{% block import_js %}{% endblock import_js %}
+</body>
+</html>

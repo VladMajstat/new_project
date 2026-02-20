@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Edit{% endblock title %}
+{% block content_area %}
+<div class="card">
+    <div class="card-body">
+        {% include "main_app/candidate_edit_form.html" %}
+    </div>
+</div>
+{% endblock %}

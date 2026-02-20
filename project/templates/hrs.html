@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}List of HRs{% endblock title %}
+{% block content_area %}
+<div class="card w-100 flex-grow-1 border-0">
+    <div class="card-body d-flex flex-column h-100 p-0">
+        {% include "main_app/hrs_list.html" %}
+    </div>
+</div>
+{% endblock %}

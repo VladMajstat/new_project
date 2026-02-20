@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Photo Upload - Picster{% endblock %}
+
+{% block extra_css %}
+<style>
+.upload-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    color: white;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.upload-btn {
+    border: 2px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.upload-btn:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.upload-btn i {
+    font-size: 2.5rem;
+}
+
+.history-section {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.upload-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.upload-item:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.upload-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.status-badge {
+    font-size: 0.85rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.status-processing {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-pending_review {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-done {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Мобільна адаптація */
+@media (max-width: 768px) {
+    .upload-section {
+        padding: 1.5rem;
+    }
+    
+    .upload-btn {
+        min-height: 100px;
+    }
+    
+    .upload-btn i {
+        font-size: 2rem;
+    }
+    
+    .upload-item img {
+        width: 60px;
+        height: 60px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Заголовок -->
+            <div class="text-center mb-4">
+                <h2 class="mb-3">
+                    <i class="ph-camera text-primary me-2"></i>
+                    Photo Upload
+                </h2>
+                <p class="text-muted">
+                    Take a photo or choose from gallery to process your document
+                </p>
+            </div>
+
+            <!-- Секція завантаження -->
+            <div class="upload-section">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <button type="button" 
+                                class="btn upload-btn text-white w-100"
+                                onclick="openCamera()">
+                            <i class="ph-camera"></i>
+                            <span>Take Photo</span>
+                            <small class="d-block opacity-75">Use device camera</small>
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" 
+                                class="btn upload-btn text-white w-100"
+                                onclick="openGallery()">
+                            <i class="ph-images"></i>
+                            <span>Choose from Gallery</span>
+                            <small class="d-block opacity-75">Select existing photo</small>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Індикатор завантаження -->
+                <div id="uploadProgress" class="mt-3 d-none">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             style="width: 100%">
+                            Processing photo...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Історія завантажень -->
+            <div class="history-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <i class="ph-clock-clockwise me-2"></i>
+                        Recent uploads
+                    </h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showHistory" checked>
+                        <label class="form-check-label" for="showHistory">
+                            Show history
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="uploadsList">
+                    {% if recent_uploads %}
+                        {% for upload in recent_uploads %}
+                        <div class="upload-item" data-upload-id="{{ upload.id }}">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    {% if upload.documentphoto_set.first %}
+                                        <img src="{{ upload.documentphoto_set.first.image.url }}" 
+                                             alt="Document photo" 
+                                             class="img-thumbnail">
+                                    {% else %}
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                             style="width: 80px; height: 80px;">
+                                            <i class="ph-file text-muted" style="font-size: 2rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col">
+                                    <h6 class="mb-1">{{ upload.original_name }}</h6>
+                                    <small class="text-muted d-block">
+                                        {{ upload.created_at|date:"d.m.Y H:i" }}
+                                    </small>
+                                    <div class="mt-2">
+                                        {% if upload.processing_status == 'processing' %}
+                                            <span class="status-badge status-processing">
+                                                <i class="ph-spinner-gap ph-spin me-1"></i>
+                                                Processing
+                                            </span>
+                                        {% elif upload.processing_status == 'pending_review' %}
+                                            <span class="status-badge status-pending_review">
+                                                <i class="ph-eye me-1"></i>
+                                                Pending Review
+                                            </span>
+                                        {% elif upload.processing_status == 'done' %}
+                                            <span class="status-badge status-done">
+                                                <i class="ph-check-circle me-1"></i>
+                                                Complete
+                                            </span>
+                                        {% else %}
+                                            <span class="status-badge status-error">
+                                                <i class="ph-x-circle me-1"></i>
+                                                Error
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    {% if upload.processing_status == 'pending_review' %}
+                                        <a href="{% url 'documents:review' upload.id %}" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="ph-eye me-1"></i>
+                                            Review
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="ph-camera" style="font-size: 3rem; opacity: 0.3;"></i>
+                            <p class="mt-2">No photos uploaded yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if recent_uploads %}
+                <div class="text-center mt-3">
+                    <button type="button" 
+                            class="btn btn-outline-danger btn-sm"
+                            onclick="clearHistory()">
+                        <i class="ph-trash me-1"></i>
+                        Clear history
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Приховані input елементи -->
+<input type="file" 
+       id="cameraInput" 
+       accept="image/*" 
+       capture="environment" 
+       style="display: none;"
+       onchange="handleImageUpload(this.files[0], 'camera')">
+
+<input type="file" 
+       id="galleryInput" 
+       accept="image/*" 
+       style="display: none;"
+       onchange="handleImageUpload(this.files[0], 'gallery')">
+
+<!-- Форма для завантаження -->
+<form id="uploadForm" method="post" enctype="multipart/form-data" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="image" id="imageInput">
+    <input type="hidden" name="source" id="sourceInput">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Функції для роботи з камерою та галереєю
+function openCamera() {
+    console.log('Opening camera...');
+    const cameraInput = document.getElementById('cameraInput');
+    
+    // Перевіряємо підтримку capture атрибута
+    if (cameraInput.capture === undefined) {
+        console.log('Camera capture not supported, falling back to file selection');
+        // Якщо capture не підтримується, використовуємо стандартний вибір
+        cameraInput.removeAttribute('capture');
+    }
+    
+    cameraInput.click();
+}
+
+function openGallery() {
+    console.log('Opening gallery...');
+    document.getElementById('galleryInput').click();
+}
+
+function handleImageUpload(file, source) {
+    if (!file) {
+        console.log('No file selected');
+        return;
+    }
+    
+    console.log(`Uploading ${source} image:`, file.name, file.type, file.size);
+    
+    // Показуємо прогрес
+    document.getElementById('uploadProgress').classList.remove('d-none');
+    
+    // Створюємо FormData для відправки
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('source', source);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    // Відправляємо на сервер
+    fetch('{% url "documents:photo" %}', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (response.ok) {
+            // Перевіряємо, чи є редірект
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.json();
+            }
+        } else {
+            throw new Error('Upload failed');
+        }
+    })
+    .then(data => {
+        if (data && data.redirect_url) {
+            window.location.href = data.redirect_url;
+        } else {
+            // Перезавантажуємо сторінку для оновлення історії
+            window.location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        document.getElementById('uploadProgress').classList.add('d-none');
+        alert('Failed to upload image. Please try again.');
+    });
+}
+
+// Функція для очищення історії
+function clearHistory() {
+    if (confirm('Are you sure you want to clear all upload history?')) {
+        fetch('{% url "documents:clear_history" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('uploadsList').innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="ph-camera" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="mt-2">No photos uploaded yet</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Clear history error:', error);
+        });
+    }
+}
+
+// Перемикач історії
+document.getElementById('showHistory').addEventListener('change', function() {
+    const uploadsList = document.getElementById('uploadsList');
+    if (this.checked) {
+        uploadsList.style.display = 'block';
+    } else {
+        uploadsList.style.display = 'none';
+    }
+});
+
+// Автоматичне оновлення статусів
+function updateUploadStatuses() {
+    const uploadItems = document.querySelectorAll('[data-upload-id]');
+    
+    uploadItems.forEach(item => {
+        const uploadId = item.dataset.uploadId;
+        
+        fetch(`/documents/api/upload-status/${uploadId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== item.dataset.currentStatus) {
+                // Оновлюємо статус на сторінці
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            // Ігноруємо помилки, просто спробуємо знову через 5 секунд
+        });
+    });
+}
+
+// Запускаємо перевірку статусів кожні 5 секунд
+setInterval(updateUploadStatuses, 5000);
+
+// Додаємо обробники для відстеження помилок
+document.getElementById('cameraInput').addEventListener('error', function(e) {
+    console.error('Camera input error:', e);
+    alert('Camera access denied or not available. Please check your browser permissions.');
+});
+
+document.getElementById('galleryInput').addEventListener('error', function(e) {
+    console.error('Gallery input error:', e);
+    alert('Failed to access gallery. Please try again.');
+});
+
+// Логування для відладки
+console.log('Photo Upload page loaded');
+console.log('Camera input capture attribute:', document.getElementById('cameraInput').capture);
+console.log('User agent:', navigator.userAgent);
+</script>
+{% endblock %}

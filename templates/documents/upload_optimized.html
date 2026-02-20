@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if upload_type == 'pdf' %}Завантаження PDF
+    {% elif upload_type == 'photo' %}Завантаження фото
+    {% elif upload_type == 'document' %}Завантаження документів
+    {% else %}Завантаження файлів{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <!-- Динамічний header -->
+                <div class="card__header {% if upload_type == 'pdf' %}{% elif upload_type == 'photo' %}{% elif upload_type == 'document' %}card__header--info{% endif %}">
+                    <h4 class="mb-0">
+                        {% if upload_type == 'pdf' %}
+                            <i class="fas fa-file-pdf"></i> Завантаження PDF
+                        {% elif upload_type == 'photo' %}
+                            <i class="fas fa-camera"></i> Завантаження фото
+                        {% elif upload_type == 'document' %}
+                            <i class="fas fa-file-alt"></i> Завантаження документів
+                        {% else %}
+                            <i class="fas fa-upload"></i> Завантаження файлів
+                        {% endif %}
+                    </h4>
+                </div>
+                
+                <div class="card__body">
+                    
+                    <!-- Блок кнопок для мобільних пристроїв -->
+                    {% if show_camera_button %}
+                    {% block mobile_buttons %}
+                    <div class="text-center mb-4">
+                        <button type="button" id="camera-btn" class="btn-document btn-document--primary btn-document--lg m-2">
+                            <i class="fas fa-camera"></i> Зробити фото
+                        </button>
+                        <button type="button" id="gallery-btn" class="btn-document btn-document--secondary btn-document--lg m-2">
+                            <i class="fas fa-images"></i> Вибрати з галереї
+                        </button>
+                        
+                        {% if upload_type == 'document' %}
+                        <button type="button" id="pdf-btn" class="btn-document btn-document--warning btn-document--lg m-2">
+                            <i class="fas fa-file-pdf"></i> Вибрати PDF
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endblock %}
+                    {% endif %}
+
+                    <!-- Drag & Drop зона -->
+                    {% block drop_zone %}
+                    <div id="drop-zone" class="drop-zone">
+                        <div class="drop-zone-content">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h5 class="mt-3">
+                                {% if upload_type == 'pdf' %}
+                                    Перетягніть PDF файл сюди
+                                {% elif upload_type == 'photo' %}
+                                    Перетягніть фото або PDF сюди
+                                {% elif upload_type == 'document' %}
+                                    Перетягніть документ сюди
+                                {% else %}
+                                    Перетягніть файл сюди
+                                {% endif %}
+                            </h5>
+                            <p class="text-muted">або</p>
+                            <button type="button" id="file-select-btn" class="btn-document btn-document--outline">
+                                <i class="fas fa-folder-open"></i> Вибрати файл
+                            </button>
+                            <p class="text-muted small mt-2">
+                                Підтримувані формати: {{ accepted_mime_types|join:", "|default:"будь-які" }}
+                            </p>
+                            <p class="text-muted small">
+                                Максимальний розмір: {{ max_file_size_mb }}MB
+                            </p>
+                        </div>
+                    </div>
+                    {% endblock %}
+
+                    <!-- Блок прев'ю -->
+                    {% block file_preview %}
+                    <div id="file-preview" class="file-preview" style="display: none;">
+                        <div class="file-preview__header">
+                            <h5 class="file-preview__title">Попередній перегляд</h5>
+                            <button type="button" id="remove-file" class="file-preview__remove">
+                                <i class="fas fa-times"></i> Видалити
+                            </button>
+                        </div>
+                        <div class="file-preview__content" id="preview-container">
+                            <!-- Контент буде додано динамічно -->
+                        </div>
+                        <div class="file-preview__info" id="file-info">
+                            <!-- Інформація про файл -->
+                        </div>
+                    </div>
+                    {% endblock %}
+
+                    <!-- Форма завантаження -->
+                    {% block upload_form %}
+                    <form id="upload-form" method="post" enctype="multipart/form-data" style="display: none;">
+                        {% csrf_token %}
+                        <input type="file" name="file" id="file-input" accept="{{ accepted_mime_types|join:',' }}" {% if mobile_optimized %}capture="environment"{% endif %}>
+                        <button type="submit" class="btn-document btn-document--success btn-document--lg w-100">
+                            <i class="fas fa-upload"></i> Завантажити
+                        </button>
+                    </form>
+                    {% endblock %}
+
+                    <!-- Індикатор завантаження -->
+                    {% block loading_indicator %}
+                    <div id="loading-indicator" class="upload-indicator" style="display: none;">
+                        <div class="upload-indicator__spinner"></div>
+                        <h5 class="mt-3">Обробка документа...</h5>
+                        <p class="text-muted">Будь ласка, зачекайте</p>
+                        <div class="upload-indicator__progress">
+                            <div class="upload-indicator__progress-bar"></div>
+                        </div>
+                    </div>
+                    {% endblock %}
+
+                    <!-- Повідомлення про помилки -->
+                    {% block error_message %}
+                    <div id="error-message" class="error-message" style="display: none;">
+                        <div class="error-message__title">
+                            <i class="fas fa-exclamation-triangle"></i> Помилка
+                        </div>
+                        <p class="error-message__text" id="error-text"></p>
+                    </div>
+                    {% endblock %}
+
+                    <!-- Історія завантажень -->
+                    {% block uploads_list %}
+                    <div class="uploads-list">
+                        <h5 class="uploads-list__title">
+                            <i class="fas fa-history"></i> Останні завантаження
+                        </h5>
+                        <div class="uploads-list__items">
+                            {% for upload in uploads %}
+                            <a href="{% url 'documents:review' upload.pk %}" class="uploads-list__item">
+                                <div class="uploads-list__item-content">
+                                    <div class="uploads-list__item-icon {% if upload.file_type == 'application/pdf' %}uploads-list__item-icon--pdf{% elif upload.file_type and upload.file_type.startswith('image/') %}uploads-list__item-icon--image{% else %}uploads-list__item-icon--default{% endif %}">
+                                        <i class="{{ upload.get_file_icon|split:' '|first }}"></i>
+                                    </div>
+                                    <div class="uploads-list__item-info">
+                                        <div class="uploads-list__item-name">{{ upload.display_name }}</div>
+                                        <div class="uploads-list__item-meta">
+                                            ID: {{ upload.id }} | {{ upload.created_at|date:"H:i d.m.Y" }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="uploads-list__item-status">
+                                    <span class="uploads-list__item-badge 
+                                        {% if upload.processing_status == 'completed' %}uploads-list__item-badge--success
+                                        {% elif upload.processing_status == 'processing' %}uploads-list__item-badge--warning
+                                        {% elif upload.processing_status == 'error' %}uploads-list__item-badge--danger
+                                        {% else %}uploads-list__item-badge--secondary{% endif %}">
+                                        {{ upload.get_processing_status_display }}
+                                    </span>
+                                </div>
+                            </a>
+                            {% empty %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>Немає завантажень</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/universal_upload.js' %}"></script>
+<script>
+// Конфігурація для JavaScript
+window.uploadConfig = {
+    uploadType: '{{ upload_type }}',
+    acceptedMimeTypes: {{ accepted_mime_types|safe }},
+    mobileOptimized: {{ mobile_optimized|yesno:"true,false" }},
+    showCameraButton: {{ show_camera_button|yesno:"true,false" }},
+    maxFileSizeMb: {{ max_file_size_mb }},
+    uploadUrl: '{% if upload_type == "pdf" %}{% url "documents:upload" %}{% elif upload_type == "photo" %}{% url "documents:photo_upload" %}{% else %}{% url "documents:universal_upload" %}{% endif %}'
+};
+
+// Клас для роботи з оптимізованими стилями
+class OptimizedDocumentUploader extends UniversalDocumentUploader {
+    constructor(config) {
+        super(config);
+        this.setupOptimizedStyles();
+    }
+    
+    setupOptimizedStyles() {
+        // Додаємо обробники для оптимізованих кнопок
+        const removeBtn = document.getElementById('remove-file');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => this.resetForm());
+        }
+    }
+    
+    showPreview(file) {
+        const previewContainer = document.getElementById('file-preview');
+        const dropZone = document.getElementById('drop-zone');
+        const previewContent = document.getElementById('preview-container');
+        const fileInfo = document.getElementById('file-info');
+        
+        if (!previewContainer || !previewContent) return;
+        
+        // Ховаємо drop zone, показуємо прев'ю
+        if (dropZone) {
+            dropZone.style.display = 'none';
+        }
+        previewContainer.style.display = 'block';
+        
+        // Очищуємо попередній контент
+        previewContent.innerHTML = '';
+        
+        if (file.type.startsWith('image/')) {
+            // Показуємо зображення
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'file-preview__image';
+                previewContent.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type === 'application/pdf') {
+            // Показуємо іконку PDF
+            const pdfIcon = document.createElement('div');
+            pdfIcon.className = 'file-preview__pdf-icon';
+            pdfIcon.innerHTML = `
+                <i class="fas fa-file-pdf fa-5x"></i>
+                <h4 class="mt-3">${file.name}</h4>
+            `;
+            previewContent.appendChild(pdfIcon);
+        }
+        
+        // Показуємо інформацію про файл
+        if (fileInfo) {
+            fileInfo.innerHTML = `
+                <div class="file-preview__info-item">
+                    <span class="file-preview__info-label">Файл:</span>
+                    <span>${file.name}</span>
+                </div>
+                <div class="file-preview__info-item">
+                    <span class="file-preview__info-label">Розмір:</span>
+                    <span>${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                </div>
+                <div class="file-preview__info-item">
+                    <span class="file-preview__info-label">Тип:</span>
+                    <span>${file.type || 'Невідомо'}</span>
+                </div>
+                <div class="file-preview__info-item">
+                    <span class="file-preview__info-label">Дата:</span>
+                    <span>${new Date().toLocaleString()}</span>
+                </div>
+            `;
+        }
+    }
+    
+    resetForm() {
+        this.currentFile = null;
+        this.isUploading = false;
+        
+        // Ховаємо прев'ю, показуємо drop zone
+        const previewContainer = document.getElementById('file-preview');
+        const dropZone = document.getElementById('drop-zone');
+        
+        if (previewContainer) {
+            previewContainer.style.display = 'none';
+        }
+        if (dropZone) {
+            dropZone.style.display = 'block';
+        }
+        
+        // Ховаємо форму
+        const uploadForm = document.getElementById('upload-form');
+        if (uploadForm) {
+            uploadForm.style.display = 'none';
+        }
+        
+        // Очищуємо file input
+        const fileInput = document.getElementById('file-input');
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        
+        // Ховаємо помилки
+        const errorMessage = document.getElementById('error-message');
+        if (errorMessage) {
+            errorMessage.style.display = 'none';
+        }
+    }
+}
+
+// Ініціалізація оптимізованого завантажувача
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.uploadConfig) {
+        window.uploader = new OptimizedDocumentUploader(window.uploadConfig);
+    }
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/document_upload_optimized.css' %}">
+{% endblock %}
