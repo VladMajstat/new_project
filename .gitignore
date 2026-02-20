@@ -19,6 +19,7 @@ project/venv/
 
 # Environment files
 *.env
+*.env.prod
 !.env.example
 
 # Logs
