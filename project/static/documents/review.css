@@ -103,3 +103,6 @@
 .is-invalid {
     border-color: #dc3545 !important;
 }
+
+/* Dark mode fixes */
+[data-color-theme="dark"] .block-card .card-header { background-color:#2b2d33; color:#e9ecef; border-bottom-color:#3a3d45; }
