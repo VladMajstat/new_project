@@ -134,6 +134,16 @@ def get_verordnungs_daten() -> List[Dict[str, Any]]:
 
         if response_code == 200:
             logging.info(f"Successfully fetched Verordnungsdaten: {response_text}")
+            try:
+                names = []
+                if isinstance(response_text, list):
+                    names = [str(item.get('name', '')) for item in response_text if isinstance(item, dict)]
+                elif isinstance(response_text, dict):
+                    names = [str(response_text.get('name', ''))]
+                if names:
+                    logging.info(f"Verordnungsarten names: {names}")
+            except Exception:
+                logging.info("Verordnungsarten names: <failed to parse>")
             return response_text if isinstance(response_text, list) else [response_text]
         else:
             error_message = (

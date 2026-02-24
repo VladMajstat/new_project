@@ -79,3 +79,4 @@ wsproto==1.2.0
 openai
 pypdf
 pdf2image
+pytesseract

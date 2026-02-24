@@ -21,10 +21,21 @@ def get_json(json_file_path: str) -> Dict[str, Any]:
 
 def parse_date(date_str: str, format_in: str = "%d.%m.%y") -> str:
     """
-    Преобразует дату из формата DD.MM.YY в YYYY-MM-DD
+    Convert date to YYYY-MM-DD.
+    Accepts YYYY-MM-DD or DD.MM.YY (default).
     """
     if not date_str or date_str.strip() == "":
         return ""
+
+    raw = date_str.strip()
+    for fmt in ("%Y-%m-%d", format_in, "%d.%m.%Y"):
+        try:
+            dt = datetime.strptime(raw, fmt)
+            return dt.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    logging.info(f"Warning: Could not parse date '{date_str}'")
+    return ""
 
     try:
         dt = datetime.strptime(date_str.strip(), format_in)
@@ -35,26 +46,46 @@ def parse_date(date_str: str, format_in: str = "%d.%m.%y") -> str:
 
 
 def get_transport_type(prescription: Dict[str, Any]) -> str:
-    """Определяет тип транспорта из данных рецепта"""
+    """Determine transport type from either new or legacy schema."""
+    if "data" in prescription and isinstance(prescription.get("data"), dict):
+        data = prescription.get("data", {})
+        if data.get("transport_ktw"):
+            return "KTW"
+        if data.get("transport_taxi"):
+            return "Taxi"
+        if data.get("transport_rtw"):
+            return "RTW"
+        if data.get("transport_naw_nef"):
+            return "NAW/NEF"
+        return ""
+
     if prescription.get("KTW, da medizinisch-fachliche Betreuung"):
         return "KTW"
-    elif prescription.get("Taxi/Mietwagen"):
+    if prescription.get("Taxi/Mietwagen"):
         return "Taxi"
-    elif prescription.get("RTW"):
+    if prescription.get("RTW"):
         return "RTW"
-    elif prescription.get("NAW/NEF"):
+    if prescription.get("NAW/NEF"):
         return "NAW/NEF"
-    else:
-        return ""
+    return ""
 
 
 def get_direction(prescription: Dict[str, Any]) -> str:
-    """Определяет направление поездки"""
-    outbound = prescription.get("Hinfahrt", False)
-    return_trip = prescription.get("Ruckfahrt", False)
+    """Determine trip direction from either new or legacy schema."""
+    if "data" in prescription and isinstance(prescription.get("data"), dict):
+        data = prescription.get("data", {})
+        outbound = bool(data.get("transport_outbound"))
+        return_trip = bool(data.get("transport_return"))
+    else:
+        outbound = prescription.get("Hinfahrt", False)
+        return_trip = prescription.get("Ruckfahrt", False)
 
     if outbound and return_trip:
-        # Создаются две поездки
+        return "Hinfahrt"
+    if outbound:
+        return "Hinfahrt"
+    if return_trip:
+        # return "Rueckfahrt"
         return "Hinfahrt"
     elif outbound:
         return "Hinfahrt"

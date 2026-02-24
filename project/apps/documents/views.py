@@ -84,6 +84,12 @@ def review(request, pk):
         form = ReviewForm(request.POST)
         if form.is_valid():
             updated_data = form.to_parsed_data()
+            existing = upload_obj.parsed_data or {}
+            existing_flags = []
+            if isinstance(existing, dict):
+                existing_flags = existing.get("flags") or []
+            if isinstance(updated_data, dict):
+                updated_data["flags"] = existing_flags
             upload_obj.parsed_data = updated_data
             
             try:

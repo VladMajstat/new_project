@@ -414,13 +414,16 @@ def review(request, pk):
     upload = get_object_or_404(DocumentUpload, pk=pk, user=request.user)
     
     if request.method == 'POST':
-        form = ReviewForm(request.POST)
-        if form.is_valid():
-            # Конвертуємо дані форми назад в структуру parsed_data
-            upload.parsed_data = form.to_parsed_data()
-            upload.processing_status = 'done'
-            upload.save()
-            
+        form = ReviewForm(request.POST)            # ?????????????????????? ???????? ?????????? ?????????? ?? ?????????????????? parsed_data
+            updated_data = form.to_parsed_data()
+            existing = upload.parsed_data or {}
+            existing_flags = []
+            if isinstance(existing, dict):
+                existing_flags = existing.get("flags") or []
+            if isinstance(updated_data, dict):
+                updated_data["flags"] = existing_flags
+            upload.parsed_data = updated_data
+            
             # Створюємо звіт в системі
             try:
                 payload = build_payload(upload.parsed_data)

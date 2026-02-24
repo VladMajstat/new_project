@@ -71,7 +71,8 @@ def build_payload(prescription: Dict[str, Any]) -> Dict[str, Any]:
     }
 
     # Priority in Ziel selection
-    pat = prescription.get("block2_patient", {})
+    data = prescription.get("data", {}) if isinstance(prescription, dict) else {}
+    pat = data
     def norm_address(city: str = "", street: str = "", zip_: str = "") -> Dict[str, str]:
         return{
             "targetCity": (city or "").strip(),
@@ -82,7 +83,7 @@ def build_payload(prescription: Dict[str, Any]) -> Dict[str, Any]:
         return bool(a.get("targetCity") and a.get("targetStreet") and a.get("targetZip"))
     
     manual_target = norm_address(TARGET_CITY, TARGET_STREET, TARGET_ZIP)
-    confirm = prescription.get("block15_patient_confirmation")
+    confirm = None
     confirm_target = norm_address()
 
     if isinstance(confirm, list) and confirm:
@@ -94,9 +95,9 @@ def build_payload(prescription: Dict[str, Any]) -> Dict[str, Any]:
         )
     
     patient_target = norm_address(
-        pat.get("patiant_city", ""),
-        pat.get("patiant_street", ""),
-        pat.get("patiant_zip", ""),
+        pat.get("patient_city", ""),
+        pat.get("patient_street", ""),
+        pat.get("patient_zip", ""),
     )
 
     if adress_is_full(manual_target):
@@ -111,7 +112,12 @@ def build_payload(prescription: Dict[str, Any]) -> Dict[str, Any]:
 
 
     # Institution selection
-    clinic = prescription.get("block10_clinic", {})
+    clinic = {
+        "clinic_name": data.get("treatment_location_name", ""),
+        "clinic_street": data.get("treatment_location_street", ""),
+        "clinic_zip": data.get("treatment_location_zip", ""),
+        "clinic_city": data.get("treatment_location_city", ""),
+    }
 
     clinic_name = (clinic.get("clinic_name") or "").strip()
     clinic_street = (clinic.get("clinic_street") or "").strip()
@@ -138,13 +144,13 @@ def build_payload(prescription: Dict[str, Any]) -> Dict[str, Any]:
         create_if_missing = False
 
     # Date format conversion
-    prescription_date = parse_date(prescription.get("Datum", ""))
-    start_date = parse_date(prescription.get("vom/am", ""))
-    end_date = parse_date(prescription.get("bis voraussichtlich", ""))
-    birth_date = parse_date(prescription.get("geb. am", ""))
+    prescription_date = parse_date(data.get("prescription_date", ""))
+    start_date = parse_date(data.get("treatment_date_from", ""))
+    end_date = parse_date(data.get("treatment_until", ""))
+    birth_date = parse_date(data.get("patient_birth_date", ""))
 
     # Parameters from prescription
-    transport_type = get_transport_type(prescription.get("block11_transport_type", {}))
+    transport_type = get_transport_type(prescription)
     verordnungsartId = get_verordnungsart_by_name(transport_type) if transport_type else ""
     # Trip direction
     direction = get_direction(prescription)
@@ -159,7 +165,13 @@ def build_payload(prescription: Dict[str, Any]) -> Dict[str, Any]:
         create_if_missing=create_if_missing,
     )
     # Normalize doctor/contact block with safe fallbacks to clinic/institution
-    doc = prescription.get("block13_doctor_contact", {}) or {}
+    doc = {
+        "auftraggeberName": data.get("ordering_party_name", ""),
+        "auftraggeberInfo": data.get("ordering_party_info", ""),
+        "auftraggeberZip": data.get("ordering_party_zip", ""),
+        "auftraggeberCity": data.get("ordering_party_city", ""),
+        "auftraggeberTelefon": data.get("ordering_party_phone", ""),
+    }
     doc_name = (doc.get("auftraggeberName") or "").strip()
     doc_info = (doc.get("auftraggeberInfo") or "").strip()
     doc_city = (doc.get("auftraggeberCity") or "").strip()
@@ -171,7 +183,7 @@ def build_payload(prescription: Dict[str, Any]) -> Dict[str, Any]:
     fallback_zip = (clinic_zip or inst.get("zip", "") or "").strip()
     fallback_info = (clinic_street or inst.get("street", "") or "").strip()
     # Set date
-    confirm_block = prescription.get("block15_patient_confirmation")
+    confirm_block = None
     confirm_date_raw = ""
     if isinstance(confirm_block, list) and confirm_block:
         confirm_date_raw = (confirm_block[0] or {}).get("date", "")
@@ -214,15 +226,15 @@ def build_payload(prescription: Dict[str, Any]) -> Dict[str, Any]:
         "materialfahrt": False,
         "note": "",
         "patientBirthday": birth_date,
-        "patientCity": prescription["block2_patient"]["patiant_city"],
+        "patientCity": data.get("patient_city", ""),
         "patientInfo": "",
-        "patientLand": prescription["block2_patient"]["patiant_city"],
+        "patientLand": data.get("patient_city", ""),
         "patientMobile": "",
-        "patientName": prescription["block2_patient"]["patiant_name"],
-        "patientStreet": prescription["block2_patient"]["patiant_street"],
-        "patientSurname": prescription["block2_patient"]["patiant_surname"],
+        "patientName": data.get("patient_first_name", ""),
+        "patientStreet": data.get("patient_street", ""),
+        "patientSurname": data.get("patient_last_name", ""),
         "patientTelephone": "",
-        "patientZip": prescription["block2_patient"]["patiant_zip"],
+        "patientZip": data.get("patient_zip", ""),
         "possibleReturnNotice": "true",
         "provider": doc_name or fallback_name,
         "sonderleistungen": [],

@@ -1,7 +1,6 @@
 from django import forms
 from .models import DispoliveReport, DocumentPhoto
 from .services.photo_processor import PhotoProcessor
-from .services.normalization import normalize_block13_doctor_contact, normalize_insurance_block
 
 
 class DocumentUploadForm(forms.Form):
@@ -130,194 +129,136 @@ class DispoliveReportForm(forms.ModelForm):
         if not parsed_data:
             return cls()
 
-        parsed_data = normalize_block13_doctor_contact(dict(parsed_data))
-        parsed_data = normalize_insurance_block(parsed_data)
-        
-        # Map parsed_data blocks to model fields
+        data = parsed_data.get('data', {}) if isinstance(parsed_data, dict) else {}
         initial = {}
-        
-        # Block 1: Insurance
-        b1 = parsed_data.get('block1_insurance', {})
-        initial['krankenkasse'] = b1.get('krankenkasse', '')
-        
-        # Block 2: Patient
-        b2 = parsed_data.get('block2_patient', {})
-        initial['patient_surname'] = b2.get('patiant_surname', '')
-        initial['patient_name'] = b2.get('patiant_name', '')
-        initial['patient_street'] = b2.get('patiant_street', '')
-        initial['patient_zip'] = b2.get('patiant_zip', '')
-        initial['patient_city'] = b2.get('patiant_city', '')
-        initial['patient_country'] = b2.get('patiant_country', 'D')
-        initial['patient_birthday'] = b2.get('geb_am', '')
-        initial['kostentraegerkennung'] = b2.get('kostentraegerkennung', '')
-        initial['versichertennr'] = b2.get('versichertennr', '')
-        # Prefer status from block2 (printed Status line); fall back to block1
-        initial['insurance_status'] = b2.get('status', '') or b1.get('status', '')
-        
-        # Block 3: Doctor IDs
-        b3 = parsed_data.get('block3_doctor_ids', {})
-        initial['betriebsstaetten_nr'] = b3.get('betriebsstaetten_nr', '')
-        initial['arzt_nr'] = b3.get('arzt_nr', '')
-        initial['datum'] = b3.get('datum', '')
-        
-        # Block 4: Reasons
-        b4 = parsed_data.get('block4_reasons', {})
-        initial['unfall'] = b4.get('unfall', False)
-        initial['arbeitsunfall'] = b4.get('arbeitsunfall', False)
-        initial['versorgungsleiden'] = b4.get('versorgungsleiden', False)
-        
-        # Block 5: Direction
-        b5 = parsed_data.get('block5_directions', {})
-        initial['hinfahrt'] = b5.get('hinfahrt', True)
-        initial['rueckfahrt'] = b5.get('rueckfahrt', True)
-        
-        # Block 6: Treatment
-        b6 = parsed_data.get('block6_treatment_type', {})
-        initial['voll_teilstationaer'] = b6.get('voll_teilstationaer', False)
-        initial['vor_nachstationaer'] = b6.get('vor_nachstationaer', False)
-        initial['ambulant_merkmale'] = b6.get('ambulant_merkmale', False)
-        initial['anderer_grund'] = b6.get('anderer_grund', False)
-        
-        # Block 7: Mandatory trips
-        b7 = parsed_data.get('block7_mandatory_trips', {})
-        initial['hochfrequent'] = b7.get('hochfrequent', False)
-        initial['ausnahmefall'] = b7.get('ausnahmefall', False)
-        initial['dauerhafte_mobilitaet'] = b7.get('dauerhafte_mobilitaet', False)
-        
-        # Block 8: KTW
-        b8 = parsed_data.get('block8_ktw_reason', {})
-        initial['anderer_grund_ktw'] = b8.get('anderer_grund_ktw', False)
-        initial['reason_description'] = b8.get('reason_description', '')
-        
-        # Block 9: Schedule
-        b9 = parsed_data.get('block9_schedule', {})
-        initial['vom_am'] = b9.get('vom_am', '')
-        initial['x_pro_woche'] = b9.get('x_pro_woche', '')
-        initial['bis_voraussichtlich'] = b9.get('bis_voraussichtlich', '')
-        
-        # Block 10: Clinic
-        b10 = parsed_data.get('block10_clinic', {})
-        initial['clinic_name'] = b10.get('clinic_name', '')
-        initial['clinic_street'] = b10.get('clinic_street', '')
-        initial['clinic_zip'] = b10.get('clinic_zip', '')
-        initial['clinic_city'] = b10.get('clinic_city', '')
-        
-        # Block 11: Transport type
-        b11 = parsed_data.get('block11_transport_type', {})
-        initial['taxi_mietwagen'] = b11.get('taxi_mietwagen', False)
-        initial['ktw_medizinisch'] = b11.get('ktw_medizinisch', False)
-        initial['vitalzeichenkontrolle'] = b11.get('vitalzeichenkontrolle', False)
-        initial['rtw'] = b11.get('rtw', False)
-        initial['naw_nef'] = b11.get('naw_nef', False)
-        initial['andere_transport'] = b11.get('andere', False)
-        
-        # Block 12: Transport mode
-        b12 = parsed_data.get('block12_transport_mode', {})
-        initial['rollstuhl'] = b12.get('rollstuhl', False)
-        initial['tragestuhl'] = b12.get('tragestuhl', False)
-        initial['liegend'] = b12.get('liegend', False)
-        
-        # Block 13: Doctor contact
-        b13 = parsed_data.get('block13_doctor_contact', {})
-        initial['auftraggeber_name'] = b13.get('auftraggeberName', '')
-        initial['auftraggeber_info'] = b13.get('auftraggeberInfo', '')
-        initial['auftraggeber_zip'] = b13.get('auftraggeberZip', '')
-        initial['auftraggeber_city'] = b13.get('auftraggeberCity', '')
-        initial['auftraggeber_telefon'] = b13.get('auftraggeberTelefon', '')
-        
-        # Block 14: Notes
-        b14 = parsed_data.get('block14_notes', {})
-        initial['begruendung_sonstiges'] = b14.get('begruendung_sonstiges', '')
-        
+
+        # Insurance
+        initial['krankenkasse'] = data.get('insurance_name', '')
+        initial['insurance_status'] = data.get('status_number', '')
+        initial['kostentraegerkennung'] = data.get('kostentraegerkennung', '')
+        initial['versichertennr'] = data.get('insurance_number', '')
+
+        # Patient
+        initial['patient_surname'] = data.get('patient_last_name', '')
+        initial['patient_name'] = data.get('patient_first_name', '')
+        initial['patient_street'] = data.get('patient_street', '')
+        initial['patient_zip'] = data.get('patient_zip', '')
+        initial['patient_city'] = data.get('patient_city', '')
+        initial['patient_country'] = 'D'
+        initial['patient_birthday'] = data.get('patient_birth_date', '')
+        initial['patient_telephone'] = ''
+
+        # Doctor IDs
+        initial['betriebsstaetten_nr'] = data.get('betriebsstaetten_nr', '')
+        initial['arzt_nr'] = data.get('arzt_nr', '')
+        initial['datum'] = data.get('prescription_date', '')
+
+        # Direction
+        initial['hinfahrt'] = data.get('transport_outbound', False)
+        initial['rueckfahrt'] = data.get('transport_return', False)
+
+        # Top-right reasons
+        initial['unfall'] = data.get('reason_accident', False)
+        initial['arbeitsunfall'] = data.get('reason_work_accident', False)
+        initial['versorgungsleiden'] = data.get('reason_care_condition', False)
+
+        # Treatment reasons (mapped to existing form fields)
+        initial['voll_teilstationaer'] = data.get('reason_full_or_partial_inpatient', False)
+        initial['vor_nachstationaer'] = data.get('reason_pre_post_inpatient', False)
+        initial['ambulant_merkmale'] = data.get('reason_ambulatory_with_marker', False)
+        initial['anderer_grund'] = data.get('reason_other', False)
+
+        # Mandatory trips
+        initial['hochfrequent'] = data.get('reason_high_frequency', False)
+        initial['dauerhafte_mobilitaet'] = data.get('reason_mobility_impairment_6m', False)
+
+        # KTW
+        initial['anderer_grund_ktw'] = data.get('reason_other_ktw', False)
+        initial['reason_description'] = data.get('ktw_reason_text', '')
+
+        # Schedule
+        initial['vom_am'] = data.get('treatment_date_from', '')
+        initial['x_pro_woche'] = data.get('treatment_frequency_per_week', '')
+        initial['bis_voraussichtlich'] = data.get('treatment_until', '')
+
+        # Clinic
+        initial['clinic_name'] = data.get('treatment_location_name', '')
+        initial['clinic_city'] = data.get('treatment_location_city', '')
+        initial['clinic_street'] = data.get('treatment_location_street', '')
+        initial['clinic_zip'] = data.get('treatment_location_zip', '')
+
+        # Transport type
+        initial['taxi_mietwagen'] = False  # taxi not allowed
+        initial['ktw_medizinisch'] = data.get('transport_ktw', False)
+        initial['rtw'] = data.get('transport_rtw', False)
+        initial['naw_nef'] = data.get('transport_naw_nef', False)
+        initial['andere_transport'] = data.get('transport_other', False)
+        initial['vitalzeichenkontrolle'] = False
+
+        # Transport mode
+        initial['rollstuhl'] = data.get('equipment_wheelchair', False)
+        initial['tragestuhl'] = data.get('equipment_transport_chair', False)
+        initial['liegend'] = data.get('equipment_lying', False)
+
+        # Doctor contact (not in new schema)
+        initial['auftraggeber_name'] = data.get('ordering_party_name', '')
+        initial['auftraggeber_info'] = data.get('ordering_party_info', '')
+        initial['auftraggeber_zip'] = data.get('ordering_party_zip', '')
+        initial['auftraggeber_city'] = data.get('ordering_party_city', '')
+        initial['auftraggeber_telefon'] = data.get('ordering_party_phone', '')
+
+        # Notes
+        initial['begruendung_sonstiges'] = ''
+
         return cls(initial=initial)
     
     def to_parsed_data(self):
-        """Convert form data back to nested JSON structure for Dispolive."""
+        """Convert form data back to JSON structure for Dispolive."""
         data = self.cleaned_data
         return {
-            'block1_insurance': {
-                'krankenkasse': data.get('krankenkasse', ''),
-                'status': data.get('insurance_status', ''),
-            },
-            'block2_patient': {
-                'patiant_surname': data.get('patient_surname', ''),
-                'patiant_name': data.get('patient_name', ''),
-                'patiant_street': data.get('patient_street', ''),
-                'patiant_zip': data.get('patient_zip', ''),
-                'patiant_city': data.get('patient_city', ''),
-                'patiant_country': data.get('patient_country', 'D'),
-                'geb_am': data.get('patient_birthday', ''),
+            'data': {
+                'insurance_name': data.get('krankenkasse', ''),
+                'patient_last_name': data.get('patient_surname', ''),
+                'patient_first_name': data.get('patient_name', ''),
+                'patient_birth_date': data.get('patient_birthday', ''),
+                'patient_street': data.get('patient_street', ''),
+                'patient_zip': data.get('patient_zip', ''),
+                'patient_city': data.get('patient_city', ''),
                 'kostentraegerkennung': data.get('kostentraegerkennung', ''),
-                'versichertennr': data.get('versichertennr', ''),
-                'status': data.get('insurance_status', ''),
-            },
-            'block3_doctor_ids': {
+                'insurance_number': data.get('versichertennr', ''),
+                'status_number': data.get('insurance_status', ''),
                 'betriebsstaetten_nr': data.get('betriebsstaetten_nr', ''),
                 'arzt_nr': data.get('arzt_nr', ''),
-                'datum': data.get('datum', ''),
-            },
-            'block4_reasons': {
-                'unfall': data.get('unfall', False),
-                'arbeitsunfall': data.get('arbeitsunfall', False),
-                'versorgungsleiden': data.get('versorgungsleiden', False),
-            },
-            'block5_directions': {
-                'hinfahrt': data.get('hinfahrt', True),
-                'rueckfahrt': data.get('rueckfahrt', True),
-            },
-            'block6_treatment_type': {
-                'voll_teilstationaer': data.get('voll_teilstationaer', False),
-                'vor_nachstationaer': data.get('vor_nachstationaer', False),
-                'ambulant_merkmale': data.get('ambulant_merkmale', False),
-                'anderer_grund': data.get('anderer_grund', False),
-            },
-            'block7_mandatory_trips': {
-                'hochfrequent': data.get('hochfrequent', False),
-                'ausnahmefall': data.get('ausnahmefall', False),
-                'dauerhafte_mobilitaet': data.get('dauerhafte_mobilitaet', False),
-            },
-            'block8_ktw_reason': {
-                'anderer_grund_ktw': data.get('anderer_grund_ktw', False),
-                'reason_description': data.get('reason_description', ''),
-            },
-            'block9_schedule': {
-                'vom_am': data.get('vom_am', ''),
-                'x_pro_woche': data.get('x_pro_woche', ''),
-                'bis_voraussichtlich': data.get('bis_voraussichtlich', ''),
-            },
-            'block10_clinic': {
-                'clinic_name': data.get('clinic_name', ''),
-                'clinic_street': data.get('clinic_street', ''),
-                'clinic_zip': data.get('clinic_zip', ''),
-                'clinic_city': data.get('clinic_city', ''),
-            },
-            'block11_transport_type': {
-                'taxi_mietwagen': data.get('taxi_mietwagen', False),
-                'ktw_medizinisch': data.get('ktw_medizinisch', False),
-                'vitalzeichenkontrolle': data.get('vitalzeichenkontrolle', False),
-                'rtw': data.get('rtw', False),
-                'naw_nef': data.get('naw_nef', False),
-                'andere': data.get('andere_transport', False),
-            },
-            'block12_transport_mode': {
-                'rollstuhl': data.get('rollstuhl', False),
-                'tragestuhl': data.get('tragestuhl', False),
-                'liegend': data.get('liegend', False),
-            },
-            'block13_doctor_contact': {
-                'auftraggeberName': data.get('auftraggeber_name', ''),
-                'auftraggeberInfo': data.get('auftraggeber_info', ''),
-                'auftraggeberZip': data.get('auftraggeber_zip', ''),
-                'auftraggeberCity': data.get('auftraggeber_city', ''),
-                'auftraggeberTelefon': data.get('auftraggeber_telefon', ''),
-            },
-            'block14_notes': {
-                'begruendung_sonstiges': data.get('begruendung_sonstiges', ''),
+                'prescription_date': data.get('datum', ''),
+                'transport_outbound': data.get('hinfahrt', False),
+                'transport_return': data.get('rueckfahrt', False),
+                'reason_full_or_partial_inpatient': data.get('voll_teilstationaer', False),
+                'reason_pre_post_inpatient': data.get('vor_nachstationaer', False),
+                'reason_ambulatory_with_marker': data.get('ambulant_merkmale', False),
+                'reason_other': data.get('anderer_grund', False),
+                'reason_high_frequency': data.get('hochfrequent', False),
+                'reason_mobility_impairment_6m': data.get('dauerhafte_mobilitaet', False),
+                'reason_other_ktw': data.get('anderer_grund_ktw', False),
+                'treatment_date_from': data.get('vom_am', ''),
+                'treatment_frequency_per_week': data.get('x_pro_woche', ''),
+                'treatment_until': data.get('bis_voraussichtlich', ''),
+                'treatment_location_name': data.get('clinic_name', ''),
+                'treatment_location_city': data.get('clinic_city', ''),
+                'transport_taxi': data.get('taxi_mietwagen', False),
+                'transport_ktw': data.get('ktw_medizinisch', False),
+                'transport_rtw': data.get('rtw', False),
+                'transport_naw_nef': data.get('naw_nef', False),
+                'transport_other': data.get('andere_transport', False),
+                'equipment_wheelchair': data.get('rollstuhl', False),
+                'equipment_transport_chair': data.get('tragestuhl', False),
+                'equipment_lying': data.get('liegend', False),
+                'medical_reason_text': data.get('begruendung_sonstiges', ''),
             },
         }
 
 
 # Alias for backward compatibility
+
 ReviewForm = DispoliveReportForm
 
 

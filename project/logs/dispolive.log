@@ -6,3 +6,14 @@
 2026-02-20 09:42:48,641 INFO [documents.dispolive] Dispolive SUCCESS | upload_id=197
 2026-02-20 14:40:04,637 INFO [documents.dispolive] Preparing Dispolive | upload_id=198 user_id=1
 2026-02-20 14:40:04,980 INFO [documents.dispolive] Dispolive SUCCESS | upload_id=198
+2026-02-23 11:40:04,184 WARNING [documents.dispolive] Failed to build payload preview for upload_id=2: 'patiant_city'
+2026-02-23 12:46:07,228 WARNING [documents.dispolive] Failed to build payload preview for upload_id=4: 'patiant_city'
+2026-02-23 12:50:51,996 WARNING [documents.dispolive] Failed to build payload preview for upload_id=6: 'patiant_city'
+2026-02-23 12:56:18,393 WARNING [documents.dispolive] Failed to build payload preview for upload_id=7: 'block2_patient'
+2026-02-23 13:03:17,458 WARNING [documents.dispolive] Failed to build payload preview for upload_id=8: 'block2_patient'
+2026-02-23 13:07:08,100 WARNING [documents.dispolive] Failed to build payload preview for upload_id=9: 'block2_patient'
+2026-02-23 13:09:44,075 WARNING [documents.dispolive] Failed to build payload preview for upload_id=10: 'block2_patient'
+2026-02-23 13:13:49,784 WARNING [documents.dispolive] Failed to build payload preview for upload_id=11: 'block2_patient'
+2026-02-23 15:24:29,575 WARNING [documents.dispolive] Failed to build payload preview for upload_id=18: 'block2_patient'
+2026-02-23 15:28:42,834 WARNING [documents.dispolive] Failed to build payload preview for upload_id=19: 'block2_patient'
+2026-02-23 15:34:11,333 WARNING [documents.dispolive] Failed to build payload preview for upload_id=20: 'block2_patient'

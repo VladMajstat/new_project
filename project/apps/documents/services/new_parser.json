@@ -35,7 +35,18 @@
     "equipment_wheelchair": false,
     "equipment_transport_chair": false,
     "equipment_lying": false,
-    "medical_reason_text": ""
+    "medical_reason_text": "",
+    "ktw_reason_text": "",
+    "treatment_location_street": "",
+    "treatment_location_zip": "",
+    "ordering_party_name": "",
+    "ordering_party_info": "",
+    "ordering_party_zip": "",
+    "ordering_party_city": "",
+    "ordering_party_phone": "",
+    "reason_accident": false,
+    "reason_work_accident": false,
+    "reason_care_condition": false
   },
   "flags": [
     {
