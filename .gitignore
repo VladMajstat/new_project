@@ -50,3 +50,17 @@ secrets.*
 Thumbs.db
 .idea/
 .vscode/
+
+# Wheel / build
+build/
+dist/
+
+# Misc
+*.tmp
+*.bak
+project/media/
+
+__pycache__/
+*.pyc
+__pycache__/
+*.pyc
