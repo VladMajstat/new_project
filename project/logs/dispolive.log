@@ -1,0 +1,8 @@
+2026-02-13 12:47:01,782 INFO [documents.dispolive] Preparing Dispolive | upload_id=38 user_id=3
+2026-02-13 12:47:01,939 ERROR [documents.dispolive] Dispolive FAILED | upload_id=38
+2026-02-20 09:37:56,895 INFO [documents.dispolive] Preparing Dispolive | upload_id=196 user_id=1
+2026-02-20 09:37:57,300 INFO [documents.dispolive] Dispolive SUCCESS | upload_id=196
+2026-02-20 09:42:48,136 INFO [documents.dispolive] Preparing Dispolive | upload_id=197 user_id=1
+2026-02-20 09:42:48,641 INFO [documents.dispolive] Dispolive SUCCESS | upload_id=197
+2026-02-20 14:40:04,637 INFO [documents.dispolive] Preparing Dispolive | upload_id=198 user_id=1
+2026-02-20 14:40:04,980 INFO [documents.dispolive] Dispolive SUCCESS | upload_id=198
