@@ -1,0 +1,51 @@
+# Python / virtualenv
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Django
+*.log
+logs/
+media/
+staticfiles/
+*.sqlite3
+
+# Env / secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets.*
+
+# Large files / archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+*.gz
+*.bz2
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.tif
+*.tiff
+*.gif
+*.mp4
+*.mov
+*.avi
+
+# OS / tools
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
