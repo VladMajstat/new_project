@@ -4306,12 +4306,3 @@
 
 .btn-icon,.btn-icon-warning,.btn-icon-success,.btn-icon-secondary,.btn-icon-info,#clearHistoryBtn,.btn-outline-danger,[data-bs-toggle="modal"]{cursor:pointer!important;-webkit-tap-highlight-color:rgba(0,0,0,0.1)}
 
-
-/* Offcanvas overlay fix */
-.offcanvas,.offcanvas-backdrop{z-index:9999!important;}
-.btn,.btn-icon,.upload-actions,.card,.form-control,.form-select{z-index:1!important;position:relative;}
-
-/* Offcanvas hard override */
-.offcanvas{position:fixed!important;z-index:20000!important;}
-.offcanvas-backdrop{position:fixed!important;z-index:19999!important;}
-#historyCard,#historyCard * ,#clearHistoryBtn{z-index:0!important;position:relative;}

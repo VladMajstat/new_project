@@ -6,13 +6,11 @@ from typing import Any, Dict
 from openai import OpenAI
 import logging
 
-
 logger = logging.getLogger(__name__)
 
 def _load_schema() -> Dict[str, Any]:
     p = Path(__file__).resolve().parent / "new_parser.json"
     return json.loads(p.read_text(encoding="utf-8"))
-
 
 def parse_form_page_to_new_parser(page_png_base64: str, extra_images: list[str] | None = None, trip_hints: Dict[str, bool] | None = None) -> Dict[str, Any]:
     api_key = os.getenv("OPENAI_API_KEY")
@@ -39,6 +37,8 @@ C) NEVER invent missing data
 ====================================================
 
 Extraction rules:
+- Never use example text from this prompt as extracted data.
+
 - Use ONLY clearly printed text. Ignore handwritten/pencil text, stamps over handwriting, and scribbles.
 - Treat table borders, vertical separators, horizontal lines, and box frames as NON-CHARACTERS.
 - If a border touches a character, ignore the border; read only the printed glyph.
@@ -81,6 +81,10 @@ Specific mappings:
   a) has two boxes: LEFT = voll-/teilstationaer, RIGHT = vor-/nachstationaer.
   If the LEFT box in a) is checked, reason_full_or_partial_inpatient must be true.
 - Mandatory trips (d/e/f only):
+  * ktw_reason_text MUST be copied ONLY from the printed text on the f) line (same line as the f) checkbox).
+  * Absolutely NO text from any other field/line/section may be used (clinic, address, department, notes, stamps, etc.).
+  * If f) line text is not fully legible, return "" and add a warning.
+
   d) hochfrequente Behandlung -> reason_high_frequency
   e) dauerhafte Mobilitaetsbeeintraechtigung -> reason_mobility_impairment_6m
   f) anderer Grund f?r Fahrt mit KTW -> reason_other_ktw
@@ -89,10 +93,24 @@ Specific mappings:
   Do NOT use clinic names, departments, addresses, or any other blocks for ktw_reason_text.
   If f) is not checked, ktw_reason_text must be empty.
 - Transport position: if Tragestuhl is marked, do NOT mark liegend unless liegend box is clearly marked.
+
+- Transport position (rollstuhl/tragestuhl/liegend):
+
+  The position boxes are ONLY the three small boxes on the right column labeled Rollstuhl / Tragestuhl / liegend.
+  The KTW checkbox on the left must NEVER affect transport position.
+  Set TRUE only if a clear X/cross is fully inside that specific box.
+  Do NOT infer from KTW checkbox or nearby text lines.
+  If no clear X in a position box, all three must be false.
+
 - Transport type checkboxes are ONLY in section '3. Art und Ausstattung der Befoerderung'. Do NOT set transport_taxi from any text in block 1 or other sections.
 - If Taxi/Mietwagen appears or is marked, do NOT set transport_taxi (leave it false).
 - Block 1 a) has two checkboxes on the same line: LEFT for 'voll-/teilstationaere Krankenhausbehandlung', RIGHT for 'vor-/nachstationaere Behandlung'. Look only at those two boxes on that line.
-- Ordering party phone: extract ONLY the phone number labeled Tel/Telefon (ignore Fax). Do not include the word "Tel".
+
+- Ordering party phone: extract ONLY the phone number explicitly labeled "Tel." or "Telefon" in the stamp.
+  * Ignore any other numbers, even if length matches.
+  * Do NOT use lines without Tel/Telefon label.
+  * Output ONLY the phone number (no label text).
+  * If Tel/Telefon label is not clearly visible -> return "".
 
 Validation rules (general):
 - Do not change extracted values during validation. Validation only produces flags.
@@ -343,7 +361,6 @@ Return JSON in this exact shape:
         if isinstance(d, dict):
             if d.get("transport_outbound") and d.get("transport_return"):
                 d["transport_return"] = False
-
 
     _enforce_no_lying = True
 

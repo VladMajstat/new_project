@@ -215,14 +215,3 @@
     padding: 2rem;
     font-size: 0.875rem;
 }
-
-/* Dark mode fixes */
-[data-color-theme="dark"] #historyCard { background:#2b2d33; border-color:#3a3d45; }
-[data-color-theme="dark"] .upload-item { color:#e9ecef; }
-[data-color-theme="dark"] .upload-item .upload-date { color:#b5b9c4; }
-[data-color-theme="dark"] .upload-item .upload-name { color:#e9ecef; }
-
-/* Offcanvas overlay fix */
-.offcanvas{z-index:30000!important;}
-.offcanvas-backdrop{z-index:29999!important;}
-#historyCard, #historyCard * , #clearHistoryBtn, .upload-actions, .btn-icon{position:static!important; z-index:0!important;}
